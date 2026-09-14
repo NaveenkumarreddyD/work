@@ -1,0 +1,19 @@
+Migration of the controlled NFS attachment sample to PowerScale S3 completed successfully.
+
+- 33 attachments were migrated using IBM's file2s3.sh/FileToS3Move tool.
+- The migration completed without errors.
+- DOCINFO.URLNAME changed from /doclinks/... to cos:doclinks/....
+- The S3 endpoint, bucket, attachment provider, and doclink properties were configured.
+- The access key and secret key were entered through the Manage System Properties UI.
+- Final post-restart validation is in progress.
+
+Remaining work:
+- Confirm all nine properties show the expected Current Value after restart.
+- Open migrated attachments across Work Orders, Assets, and Locations.
+- Upload, download, and delete a new S3 attachment.
+- Verify the new object in PowerScale S3 and the new cos:doclinks URLNAME in Oracle.
+- Test rollback to NFS and return to S3.
+
+Rollback will retain both NFS and S3 files, restore the previous NFS system properties and original DOCINFO.URLNAME values for a small sample, restart the Manage bundles, and confirm the files open from NFS. The sample will then be returned to S3 and tested again.
+
+The attached test record contains the completed work, validation checklist, rollback procedure, and closure criteria. No credentials are included.
