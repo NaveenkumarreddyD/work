@@ -1,26 +1,70 @@
-# Maximo NFS Attachment Copy
+# Maximo Attachment File Copy Procedure
 
-Linux-only runbook for copying Maximo Manage attachments from Prod NFS to Dev/DR PowerScale NFS after a Prod database clone.
+## Purpose
 
-This is **not** S3 migration.
+After the Prod database is cloned to Dev/DR, Maximo has the attachment records in the database, but the actual attachment files still need to be copied from Prod NFS to the Dev/DR PowerScale NFS location.
 
-## What This Does
+This procedure uses the paths stored in `DOCINFO.URLNAME` to copy the matching files.
 
-The cloned Dev/DR database has attachment records in `DOCINFO`, but the physical files still exist on Prod NFS. This process uses the database paths to copy the matching files into Dev/DR NFS.
+This process only copies files. It does not move files, delete files, change Prod NFS, or update database records.
 
-It only copies files. It does not move, delete, rename, or update database records.
+## What You Need Before Starting
 
-## Folder Contents
+Confirm these items first:
+
+- DBeaver can connect to the cloned Dev/DR Maximo database.
+- You know the Prod NFS doclinks root path.
+- You know the Dev/DR PowerScale NFS doclinks root path.
+- The server where you run the scripts can access both NFS paths.
+- The scripts in this folder are available on that server.
+
+## Files In This Folder
 
 ```text
-scripts/build_manifest.sh       Builds source-to-destination mapping
-scripts/copy_from_manifest.sh   Dry-runs or copies files from manifest
-examples/                       Optional sample/export files
+sql/export_3000_attachments.sql    SQL for testing with 3000 attachments
+sql/export_all_attachments.sql     SQL for exporting all file attachments
+scripts/build_manifest.sh          Creates the source-to-destination file list
+scripts/copy_from_manifest.sh      Runs dry run or actual copy
 ```
 
-## 1. Export 3000 Attachment Paths From DBeaver
+## Common Setup
 
-Run this SQL against the cloned Dev/DR database:
+Create a working folder on the copy server:
+
+```bash
+mkdir -p /var/tmp/maximo_attachment_copy
+```
+
+Set your real NFS paths:
+
+```bash
+PROD_ROOT="/actual/prod/doclinks"
+DEV_ROOT="/actual/dev/doclinks"
+WORK_DIR="/var/tmp/maximo_attachment_copy"
+```
+
+Replace these example paths with the real paths for your environment.
+
+Example mapping:
+
+```text
+Database path:
+  /doclinks/attachments/example.pdf
+
+Prod source file:
+  $PROD_ROOT/attachments/example.pdf
+
+Dev/DR destination file:
+  $DEV_ROOT/attachments/example.pdf
+```
+
+## Option 1: Test With 3000 Attachments
+
+Use this first to validate the process before copying everything.
+
+### Step 1: Export 3000 Records From DBeaver
+
+In DBeaver, run:
 
 ```sql
 select
@@ -37,7 +81,13 @@ order by docinfoid desc
 fetch first 3000 rows only;
 ```
 
-Export from DBeaver:
+The same SQL is saved here:
+
+```text
+sql/export_3000_attachments.sql
+```
+
+Export the result from DBeaver using these settings:
 
 ```text
 Format: CSV
@@ -49,9 +99,72 @@ Encoding: UTF-8
 File name: maximo_3000_attachments.csv
 ```
 
-## 2. Export All Attachment Paths From DBeaver
+Copy the exported file to the copy server:
 
-For full copy, run the same query without the 3000-row limit:
+```text
+/var/tmp/maximo_attachment_copy/maximo_3000_attachments.csv
+```
+
+### Step 2: Build The 3000-File Manifest
+
+```bash
+./scripts/build_manifest.sh \
+  "$WORK_DIR/maximo_3000_attachments.csv" \
+  "$WORK_DIR/maximo_3000_manifest.csv" \
+  "$PROD_ROOT" \
+  "$DEV_ROOT"
+```
+
+Review possible issues before copying:
+
+```bash
+grep source_missing "$WORK_DIR/maximo_3000_manifest.csv"
+grep dest_exists_different_size "$WORK_DIR/maximo_3000_manifest.csv"
+```
+
+### Step 3: Dry Run The 3000-File Copy
+
+```bash
+./scripts/copy_from_manifest.sh \
+  "$WORK_DIR/maximo_3000_manifest.csv" \
+  "$WORK_DIR/maximo_3000_dryrun.log" \
+  dry-run
+```
+
+Review the dry-run result:
+
+```bash
+grep DRY_RUN_READY "$WORK_DIR/maximo_3000_dryrun.log" | wc -l
+grep SOURCE_MISSING "$WORK_DIR/maximo_3000_dryrun.log"
+grep SKIPPED_DEST_DIFFERENT_SIZE "$WORK_DIR/maximo_3000_dryrun.log"
+```
+
+### Step 4: Copy The 3000 Files
+
+Run this only after reviewing the dry run:
+
+```bash
+./scripts/copy_from_manifest.sh \
+  "$WORK_DIR/maximo_3000_manifest.csv" \
+  "$WORK_DIR/maximo_3000_copy.log" \
+  execute
+```
+
+Review the copy result:
+
+```bash
+grep COPIED "$WORK_DIR/maximo_3000_copy.log" | wc -l
+grep COPY_FAILED "$WORK_DIR/maximo_3000_copy.log"
+grep SOURCE_MISSING "$WORK_DIR/maximo_3000_copy.log"
+```
+
+## Option 2: Copy All Attachments
+
+Use this after the 3000-file test is successful.
+
+### Step 1: Export All File Attachment Records From DBeaver
+
+In DBeaver, run:
 
 ```sql
 select
@@ -67,7 +180,13 @@ where urltype = 'FILE'
 order by docinfoid;
 ```
 
-Export from DBeaver:
+The same SQL is saved here:
+
+```text
+sql/export_all_attachments.sql
+```
+
+Export the result from DBeaver using these settings:
 
 ```text
 Format: CSV
@@ -79,108 +198,13 @@ Encoding: UTF-8
 File name: maximo_all_attachments.csv
 ```
 
-## 3. Prepare Linux Copy Server
-
-Use a Linux server that can access both:
-
-```text
-Prod NFS doclinks path
-Dev/DR NFS doclinks path
-```
-
-Create a working folder:
-
-```bash
-mkdir -p /var/tmp/maximo_attachment_copy
-```
-
-Copy the DBeaver export to:
-
-```text
-/var/tmp/maximo_attachment_copy/maximo_3000_attachments.csv
-```
-
-or for full copy:
+Copy the exported file to the copy server:
 
 ```text
 /var/tmp/maximo_attachment_copy/maximo_all_attachments.csv
 ```
 
-## 4. Set Real NFS Paths
-
-Set these on the Linux copy server:
-
-```bash
-PROD_ROOT="/actual/prod/doclinks"
-DEV_ROOT="/actual/dev/doclinks"
-WORK_DIR="/var/tmp/maximo_attachment_copy"
-```
-
-Example mapping:
-
-```text
-DB URLNAME:
-  /doclinks/attachments/example.pdf
-
-Prod source:
-  $PROD_ROOT/attachments/example.pdf
-
-Dev/DR destination:
-  $DEV_ROOT/attachments/example.pdf
-```
-
-## 5. Build Manifest For 3000-File Test
-
-```bash
-./scripts/build_manifest.sh \
-  "$WORK_DIR/maximo_3000_attachments.csv" \
-  "$WORK_DIR/maximo_3000_manifest.csv" \
-  "$PROD_ROOT" \
-  "$DEV_ROOT"
-```
-
-Review:
-
-```bash
-grep source_missing "$WORK_DIR/maximo_3000_manifest.csv"
-grep dest_exists_different_size "$WORK_DIR/maximo_3000_manifest.csv"
-```
-
-## 6. Dry-Run 3000-File Copy
-
-```bash
-./scripts/copy_from_manifest.sh \
-  "$WORK_DIR/maximo_3000_manifest.csv" \
-  "$WORK_DIR/maximo_3000_dryrun.log" \
-  dry-run
-```
-
-Review:
-
-```bash
-grep DRY_RUN_READY "$WORK_DIR/maximo_3000_dryrun.log" | wc -l
-grep SOURCE_MISSING "$WORK_DIR/maximo_3000_dryrun.log"
-grep SKIPPED_DEST_DIFFERENT_SIZE "$WORK_DIR/maximo_3000_dryrun.log"
-```
-
-## 7. Execute 3000-File Copy
-
-```bash
-./scripts/copy_from_manifest.sh \
-  "$WORK_DIR/maximo_3000_manifest.csv" \
-  "$WORK_DIR/maximo_3000_copy.log" \
-  execute
-```
-
-Review:
-
-```bash
-grep COPIED "$WORK_DIR/maximo_3000_copy.log" | wc -l
-grep COPY_FAILED "$WORK_DIR/maximo_3000_copy.log"
-grep SOURCE_MISSING "$WORK_DIR/maximo_3000_copy.log"
-```
-
-## 8. Build Manifest For Full Copy
+### Step 2: Build The Full Manifest
 
 ```bash
 ./scripts/build_manifest.sh \
@@ -190,14 +214,14 @@ grep SOURCE_MISSING "$WORK_DIR/maximo_3000_copy.log"
   "$DEV_ROOT"
 ```
 
-Review:
+Review possible issues before copying:
 
 ```bash
 grep source_missing "$WORK_DIR/maximo_all_manifest.csv"
 grep dest_exists_different_size "$WORK_DIR/maximo_all_manifest.csv"
 ```
 
-## 9. Dry-Run Full Copy
+### Step 3: Dry Run The Full Copy
 
 ```bash
 ./scripts/copy_from_manifest.sh \
@@ -206,7 +230,7 @@ grep dest_exists_different_size "$WORK_DIR/maximo_all_manifest.csv"
   dry-run
 ```
 
-Review:
+Review the dry-run result:
 
 ```bash
 grep DRY_RUN_READY "$WORK_DIR/maximo_all_dryrun.log" | wc -l
@@ -214,9 +238,9 @@ grep SOURCE_MISSING "$WORK_DIR/maximo_all_dryrun.log"
 grep SKIPPED_DEST_DIFFERENT_SIZE "$WORK_DIR/maximo_all_dryrun.log"
 ```
 
-## 10. Execute Full Copy
+### Step 4: Copy All Files
 
-Run only after dry-run review:
+Run this only after reviewing the dry run:
 
 ```bash
 ./scripts/copy_from_manifest.sh \
@@ -225,7 +249,7 @@ Run only after dry-run review:
   execute
 ```
 
-Review:
+Review the copy result:
 
 ```bash
 grep COPIED "$WORK_DIR/maximo_all_copy.log" | wc -l
@@ -233,21 +257,25 @@ grep COPY_FAILED "$WORK_DIR/maximo_all_copy.log"
 grep SOURCE_MISSING "$WORK_DIR/maximo_all_copy.log"
 ```
 
-## 11. Validate In Dev/DR Maximo
+## Validation
 
-Open several copied attachments in Dev/DR Maximo:
+After copying, open sample attachments in Dev/DR Maximo.
+
+Test different file types:
 
 ```text
 PDF
-JPG/PNG
-XLS/XLSX
-DOC/DOCX
+JPG or PNG
+XLS or XLSX
+DOC or DOCX
 ```
+
+Confirm the files open successfully from Dev/DR Maximo.
 
 ## Safety Notes
 
-- Source Prod NFS files are never modified.
-- The script uses `cp -p`, not `mv`.
-- Destination folders are created automatically.
+- Prod files are not modified.
+- The copy script uses `cp -p`.
 - Existing destination files with the same size are skipped.
-- Existing destination files with different size are skipped for manual review.
+- Existing destination files with a different size are skipped and logged for review.
+- Missing source files are logged.
