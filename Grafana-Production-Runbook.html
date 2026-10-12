@@ -96,15 +96,17 @@ li{margin:3px 0}
 .copy:hover{background:rgba(255,255,255,.14)}
 .copy svg{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linejoin:round}
 .copy.ok{background:var(--accent);border-color:var(--accent);color:#fff}
-.cmd pre{margin:0;padding:11px 12px;overflow-x:auto}
-.cmd code{font-family:var(--mono);font-size:.795rem;line-height:1.62;color:var(--term-fg);
-  white-space:pre;display:block}
+.cmd pre{margin:0;padding:11px 14px}
+.cmd code{font-family:var(--mono);font-size:.8rem;line-height:1.65;color:var(--term-fg);
+  white-space:pre-wrap;overflow-wrap:anywhere;display:block;background:none;padding:0;
+  border-radius:0;padding-left:1.45em;text-indent:-1.45em}
 
 /* callouts */
 .expect{display:flex;gap:9px;font-size:.88rem;color:var(--ink-2);padding:8px 11px;border-radius:7px;
   background:var(--accent-soft);align-items:baseline}
-.expect>span{font-family:var(--mono);font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;
+.expect .lbl{font-family:var(--mono);font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;
   color:var(--accent);flex:none;padding-top:2px}
+.expect .etxt{min-width:0;flex:1}
 .checkline{font-weight:600;font-size:.9rem}
 .note{border-left:3px solid var(--ink-3);padding:9px 13px;background:var(--card);border-radius:0 7px 7px 0;
   font-size:.9rem;color:var(--ink-2)}
@@ -118,8 +120,8 @@ th{font-size:.68rem;letter-spacing:.07em;text-transform:uppercase;color:var(--in
 tr:last-child td{border-bottom:0}
 td:first-child{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
 
-code{font-family:var(--mono);font-size:.86em;background:var(--accent-soft);padding:1px 4px;border-radius:4px}
-.expect code,.note code{background:rgba(127,127,127,.17)}
+:where(p,li,td,th,h2,h3,.expect,.note,.checkline) code{font-family:var(--mono);font-size:.86em;background:var(--accent-soft);padding:1px 4px;border-radius:4px}
+:where(.expect,.note) code{background:rgba(127,127,127,.17)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -151,13 +153,13 @@ BACKUP_PATH=/u01/backups
 EOF</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c3" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c3">sudo chmod 0640 /etc/monitoring/install.env
 source /etc/monitoring/install.env</code></pre></figure>
-<p class="expect"><span>Expect</span>no output. Each phase re-sources this file, so the values survive the Step 5 reboot.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">no output. Each phase re-sources this file, so the values survive the Step 5 reboot.</span></p>
 </section>
 <section class="step gate" id="step-2"><h3><label class="tick"><input type="checkbox" class="done" data-step="2"><span class="num">2</span></label><span class="st">values are complete</span><span class="badge">CHECK</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c4" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c4">for v in MON_IP GRAFANA_FQDN APPROVED_CIDR SMTP_HOST SMTP_PORT SMTP_FROM ALERT_TO BACKUP_PATH; do printf &#x27;%-16s = %s\n&#x27; &quot;$v&quot; &quot;${!v:-&lt;&lt;UNSET&gt;&gt;}&quot;; done</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c5" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c5">echo &quot;$GRAFANA_FQDN $SMTP_FROM $ALERT_TO&quot; | grep -q &#x27;example\.com&#x27; &amp;&amp; echo &quot;FAIL: example.com values still present&quot; || echo &quot;OK: no example values&quot;</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c6" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c6">[ -n &quot;$MON_IP&quot; ] &amp;&amp; [ -n &quot;$GRAFANA_FQDN&quot; ] &amp;&amp; [ -n &quot;$APPROVED_CIDR&quot; ] &amp;&amp; [ -n &quot;$BACKUP_PATH&quot; ] &amp;&amp; echo &quot;OK: all values set&quot; || echo &quot;FAIL: a value is empty&quot;</code></pre></figure>
-<p class="expect"><span>Expect</span>eight populated values, then two <code>OK</code> lines. On any FAIL, re-edit <code>/etc/monitoring/install.env</code> and repeat.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">eight populated values, then two <code>OK</code> lines. On any FAIL, re-edit <code>/etc/monitoring/install.env</code> and repeat.</span></p>
 </section>
 <section class="step" id="step-3"><h3><label class="tick"><input type="checkbox" class="done" data-step="3"><span class="num">3</span></label><span class="st">DNS state</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c7" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c7">getent hosts &quot;$GRAFANA_FQDN&quot; || echo &quot;Not resolving yet. Raised as a request in Step 9.&quot;</code></pre></figure>
@@ -170,7 +172,7 @@ df -h
 free -h
 timedatectl
 chronyc tracking</code></pre></figure>
-<p class="expect"><span>Expect</span>RHEL 9.x, x86_64, a <code>/u01</code> mount with roughly 50 GB, and <code>System clock synchronized: yes</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">RHEL 9.x, x86_64, a <code>/u01</code> mount with roughly 50 GB, and <code>System clock synchronized: yes</code>.</span></p>
 <p>Fix chrony before continuing if time is not synchronised.</p>
 </section>
 <h2 id="phase-2-base-os">Phase 2: Base OS</h2>
@@ -183,7 +185,7 @@ chronyc tracking</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c12" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c12">uname -r
 systemctl --failed --no-pager
 source /etc/monitoring/install.env</code></pre></figure>
-<p class="expect"><span>Expect</span>the new kernel, and <code>0 loaded units listed</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">the new kernel, and <code>0 loaded units listed</code>.</span></p>
 </section>
 <section class="step" id="step-7"><h3><label class="tick"><input type="checkbox" class="done" data-step="7"><span class="num">7</span></label><span class="st">Create directories</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c13" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c13">findmnt /u01
@@ -199,7 +201,7 @@ sudo install -d -o root -g root -m 0700 &quot;$BACKUP_PATH/config&quot;</code></
 sudo firewall-cmd --state
 sudo firewall-cmd --get-active-zones
 sudo firewall-cmd --get-default-zone</code></pre></figure>
-<p class="expect"><span>Expect</span><code>Enforcing</code> and <code>running</code>. Nothing in this runbook requires disabling either.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>Enforcing</code> and <code>running</code>. Nothing in this runbook requires disabling either.</span></p>
 </section>
 <h2 id="phase-3-dns-and-tls-certificate">Phase 3: DNS and TLS certificate</h2>
 <p>Do this phase first. Grafana will not start without the certificate, and the DNS and certificate requests are the longest lead times in the install. Steps 13 to 34 do not depend on either, so get both requests moving and carry on working.</p>
@@ -210,7 +212,7 @@ printf &#x27;A record request:\n  %s  -&gt;  %s\n&#x27; &quot;$GRAFANA_FQDN&quot
 <p>Raise that with whoever manages DNS. Once they confirm it is created, verify it here:</p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c18" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c18">getent hosts &quot;$GRAFANA_FQDN&quot;
 dig +short &quot;$GRAFANA_FQDN&quot;</code></pre></figure>
-<p class="expect"><span>Expect</span>the address matches <code>MON_IP</code>. Resolution can lag creation by a cache interval, so re-check later if it is empty. Carry on with Step 10 while you wait.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">the address matches <code>MON_IP</code>. Resolution can lag creation by a cache interval, so re-check later if it is empty. Carry on with Step 10 while you wait.</span></p>
 </section>
 <section class="step" id="step-10"><h3><label class="tick"><input type="checkbox" class="done" data-step="10"><span class="num">10</span></label><span class="st">Generate key and CSR</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c19" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c19">source /etc/monitoring/install.env
@@ -220,7 +222,7 @@ sudo install -d -o root -g root -m 0700 /etc/monitoring/csr</code></pre></figure
 </section>
 <section class="step gate" id="step-11"><h3><label class="tick"><input type="checkbox" class="done" data-step="11"><span class="num">11</span></label><span class="st">CSR contents, then request the certificate</span><span class="badge">CHECK</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c22" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c22">sudo openssl req -noout -text -in /etc/monitoring/csr/grafana.csr | grep -E &quot;Subject:|DNS:&quot;</code></pre></figure>
-<p class="expect"><span>Expect</span><code>Subject: CN = &lt;FQDN&gt;</code> and a <code>DNS:&lt;FQDN&gt;</code> entry. Browsers require the SAN, so both must be present.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>Subject: CN = &lt;FQDN&gt;</code> and a <code>DNS:&lt;FQDN&gt;</code> entry. Browsers require the SAN, so both must be present.</span></p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c23" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c23">sudo cat /etc/monitoring/csr/grafana.csr</code></pre></figure>
 <p>Send that PEM block to whoever issues certificates. Ask for the signed certificate and the issuing chain, against the FQDN from Step 9. Install what comes back in Step 12.</p>
 </section>
@@ -243,16 +245,16 @@ sudo openssl x509 -noout -enddate -subject -issuer -in /etc/grafana/tls/grafana-
 <h2 id="phase-4-postgresql-16">Phase 4: PostgreSQL 16</h2>
 <section class="step" id="step-13"><h3><label class="tick"><input type="checkbox" class="done" data-step="13"><span class="num">13</span></label><span class="st">Install</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c28" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c28">dnf module list postgresql</code></pre></figure>
-<p class="expect"><span>Expect</span>streams 16, 15, 13. If 16 is absent, patch the host to a newer RHEL 9 minor release first.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">streams 16, 15, 13. If 16 is absent, patch the host to a newer RHEL 9 minor release first.</span></p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c29" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c29">sudo dnf module reset postgresql -y
 sudo dnf module install postgresql:16/server -y
 postgres --version</code></pre></figure>
-<p class="expect"><span>Expect</span><code>postgres (PostgreSQL) 16.x</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>postgres (PostgreSQL) 16.x</code>.</span></p>
 </section>
 <section class="step gate" id="step-14"><h3><label class="tick"><input type="checkbox" class="done" data-step="14"><span class="num">14</span></label><span class="st">initialise with data checksums</span><span class="badge">CHECK</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c30" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c30">sudo PGSETUP_INITDB_OPTIONS=&quot;--data-checksums&quot; postgresql-setup --initdb</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c31" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c31">sudo -u postgres pg_controldata /var/lib/pgsql/data | grep &quot;Data page checksum&quot;</code></pre></figure>
-<p class="expect"><span>Expect</span><code>Data page checksum version: 1</code>. If it reports 0, remove <code>/var/lib/pgsql/data</code> and repeat. Checksums cannot be enabled later without re-initialising.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>Data page checksum version: 1</code>. If it reports 0, remove <code>/var/lib/pgsql/data</code> and repeat. Checksums cannot be enabled later without re-initialising.</span></p>
 </section>
 <section class="step" id="step-15"><h3><label class="tick"><input type="checkbox" class="done" data-step="15"><span class="num">15</span></label><span class="st">Apply settings</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c32" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c32">sudo tee -a /var/lib/pgsql/data/postgresql.conf &gt;/dev/null &lt;&lt;&#x27;EOF&#x27;
@@ -278,15 +280,15 @@ sudo chmod 0600 /var/lib/pgsql/data/pg_hba.conf</code></pre></figure>
 </section>
 <section class="step gate" id="step-17"><h3><label class="tick"><input type="checkbox" class="done" data-step="17"><span class="num">17</span></label><span class="st">authentication rules</span><span class="badge">CHECK</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c37" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c37">sudo grep -nE &#x27;^(host|local)&#x27; /var/lib/pgsql/data/pg_hba.conf</code></pre></figure>
-<p class="expect"><span>Expect</span>the two <code>grafana grafana</code> rules above every <code>all all</code> rule.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">the two <code>grafana grafana</code> rules above every <code>all all</code> rule.</span></p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c38" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c38">sudo grep -c ident /var/lib/pgsql/data/pg_hba.conf</code></pre></figure>
-<p class="expect"><span>Expect</span><code>0</code>. Correct the file by hand if not.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>0</code>. Correct the file by hand if not.</span></p>
 </section>
 <section class="step" id="step-18"><h3><label class="tick"><input type="checkbox" class="done" data-step="18"><span class="num">18</span></label><span class="st">Start PostgreSQL</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c39" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c39">sudo systemctl enable --now postgresql
 sudo systemctl status postgresql --no-pager
 sudo -u postgres psql -c &quot;SELECT version();&quot;</code></pre></figure>
-<p class="expect"><span>Expect</span><code>active (running)</code> and the version string.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>active (running)</code> and the version string.</span></p>
 </section>
 <section class="step" id="step-19"><h3><label class="tick"><input type="checkbox" class="done" data-step="19"><span class="num">19</span></label><span class="st">Create the role and database</span></h3>
 <p>The password is generated to a file and read from it, so it is never typed or left in shell history.</p>
@@ -297,10 +299,10 @@ sudo chmod 0600 /etc/monitoring/secrets/grafana_db_password</code></pre></figure
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c42" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c42">sudo -u postgres psql -v ON_ERROR_STOP=1 -c &quot;CREATE DATABASE grafana OWNER grafana ENCODING &#x27;UTF8&#x27; TEMPLATE template0;&quot;</code></pre></figure>
 <p class="checkline">password hashed with SCRAM.</p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c43" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c43">sudo -u postgres psql -Atc &quot;SELECT rolname, left(rolpassword,14) FROM pg_authid WHERE rolname=&#x27;grafana&#x27;;&quot;</code></pre></figure>
-<p class="expect"><span>Expect</span><code>grafana|SCRAM-SHA-256</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>grafana|SCRAM-SHA-256</code>.</span></p>
 <p class="checkline">TCP login works.</p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c44" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c44">PGPASSWORD=&quot;$(sudo cat /etc/monitoring/secrets/grafana_db_password)&quot; psql &quot;host=127.0.0.1 port=5432 dbname=grafana user=grafana&quot; -c &quot;SELECT current_database(), current_user;&quot;</code></pre></figure>
-<p class="expect"><span>Expect</span><code>grafana | grafana</code>. An ident authentication error means Step 16 did not apply. Repeat Steps 16 and 17 before continuing.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>grafana | grafana</code>. An ident authentication error means Step 16 did not apply. Repeat Steps 16 and 17 before continuing.</span></p>
 </section>
 <h2 id="phase-5-node-exporter">Phase 5: Node Exporter</h2>
 <section class="step gate" id="step-20"><h3><label class="tick"><input type="checkbox" class="done" data-step="20"><span class="num">20</span></label><span class="st">download and verify</span><span class="badge">CHECK</span></h3>
@@ -309,14 +311,14 @@ cd /var/tmp/monitoring-dl</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c46" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c46">sudo curl -fLO https://github.com/prometheus/node_exporter/releases/download/v1.12.1/node_exporter-1.12.1.linux-amd64.tar.gz</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c47" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c47">sudo curl -fLo node_exporter-sha256sums.txt https://github.com/prometheus/node_exporter/releases/download/v1.12.1/sha256sums.txt</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c48" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c48">grep &#x27; node_exporter-1.12.1.linux-amd64.tar.gz$&#x27; node_exporter-sha256sums.txt | sha256sum -c -</code></pre></figure>
-<p class="expect"><span>Expect</span><code>node_exporter-1.12.1.linux-amd64.tar.gz: OK</code>. Do not install the binary otherwise.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>node_exporter-1.12.1.linux-amd64.tar.gz: OK</code>. Do not install the binary otherwise.</span></p>
 </section>
 <section class="step" id="step-21"><h3><label class="tick"><input type="checkbox" class="done" data-step="21"><span class="num">21</span></label><span class="st">Install</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c49" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c49">sudo tar -xzf node_exporter-1.12.1.linux-amd64.tar.gz
 id -u node_exporter &gt;/dev/null 2&gt;&amp;1 || sudo useradd --system --no-create-home --shell /sbin/nologin node_exporter
 sudo install -m 0755 node_exporter-1.12.1.linux-amd64/node_exporter /usr/local/bin/node_exporter
 /usr/local/bin/node_exporter --version</code></pre></figure>
-<p class="expect"><span>Expect</span><code>node_exporter, version 1.12.1</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>node_exporter, version 1.12.1</code>.</span></p>
 </section>
 <section class="step" id="step-22"><h3><label class="tick"><input type="checkbox" class="done" data-step="22"><span class="num">22</span></label><span class="st">Create the service</span></h3>
 <p>Bound to loopback. Prometheus scrapes 127.0.0.1, so port 9100 is not exposed on this host.</p>
@@ -352,7 +354,7 @@ sudo systemctl status node_exporter --no-pager</code></pre></figure>
 <section class="step gate" id="step-23"><h3><label class="tick"><input type="checkbox" class="done" data-step="23"><span class="num">23</span></label><span class="st">metrics and bind address</span><span class="badge">CHECK</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c52" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c52">curl -fsS http://127.0.0.1:9100/metrics | head -3
 sudo ss -lntp | grep 9100</code></pre></figure>
-<p class="expect"><span>Expect</span><code># HELP</code> lines, and the listener on <code>127.0.0.1:9100</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code># HELP</code> lines, and the listener on <code>127.0.0.1:9100</code>.</span></p>
 </section>
 <h2 id="phase-6-prometheus">Phase 6: Prometheus</h2>
 <section class="step gate" id="step-24"><h3><label class="tick"><input type="checkbox" class="done" data-step="24"><span class="num">24</span></label><span class="st">download and verify</span><span class="badge">CHECK</span></h3>
@@ -361,7 +363,7 @@ cd /var/tmp/monitoring-dl</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c54" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c54">sudo curl -fLO https://github.com/prometheus/prometheus/releases/download/v3.13.4/prometheus-3.13.4.linux-amd64.tar.gz</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c55" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c55">sudo curl -fLo prometheus-sha256sums.txt https://github.com/prometheus/prometheus/releases/download/v3.13.4/sha256sums.txt</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c56" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c56">grep &#x27; prometheus-3.13.4.linux-amd64.tar.gz$&#x27; prometheus-sha256sums.txt | sha256sum -c -</code></pre></figure>
-<p class="expect"><span>Expect</span><code>prometheus-3.13.4.linux-amd64.tar.gz: OK</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>prometheus-3.13.4.linux-amd64.tar.gz: OK</code>.</span></p>
 </section>
 <section class="step" id="step-25"><h3><label class="tick"><input type="checkbox" class="done" data-step="25"><span class="num">25</span></label><span class="st">Install</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c57" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c57">sudo tar -xzf prometheus-3.13.4.linux-amd64.tar.gz
@@ -371,7 +373,7 @@ sudo install -d -o prometheus -g prometheus -m 0750 /u01/prometheus
 sudo install -m 0755 prometheus-3.13.4.linux-amd64/prometheus /usr/local/bin/prometheus
 sudo install -m 0755 prometheus-3.13.4.linux-amd64/promtool /usr/local/bin/promtool
 /usr/local/bin/prometheus --version</code></pre></figure>
-<p class="expect"><span>Expect</span><code>prometheus, version 3.13.4</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>prometheus, version 3.13.4</code>.</span></p>
 </section>
 <section class="step" id="step-26"><h3><label class="tick"><input type="checkbox" class="done" data-step="26"><span class="num">26</span></label><span class="st">Write the config</span></h3>
 <p>Self-monitoring only. Application targets are added later (Appendix B).</p>
@@ -463,7 +465,7 @@ EOF</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c60" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c60">sudo chown -R prometheus:prometheus /etc/prometheus /u01/prometheus
 sudo promtool check config /etc/prometheus/prometheus.yml
 sudo promtool check rules /etc/prometheus/rules/*.yml</code></pre></figure>
-<p class="expect"><span>Expect</span><code>SUCCESS</code> for the config, and <code>SUCCESS: 6 rules found</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>SUCCESS</code> for the config, and <code>SUCCESS: 6 rules found</code>.</span></p>
 </section>
 <section class="step" id="step-29"><h3><label class="tick"><input type="checkbox" class="done" data-step="29"><span class="num">29</span></label><span class="st">Create the service</span></h3>
 <p>Retention of 40 GB is roughly 80 percent of the 50 GB <code>/u01</code> mount.</p>
@@ -505,7 +507,7 @@ sudo systemctl status prometheus --no-pager</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c63" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c63">curl -fsS http://127.0.0.1:9090/-/healthy; echo
 curl -fsS http://127.0.0.1:9090/-/ready; echo</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c64" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c64">curl -fsS &#x27;http://127.0.0.1:9090/api/v1/targets?state=active&#x27; | grep -o &#x27;&quot;health&quot;:&quot;[a-z]*&quot;&#x27;</code></pre></figure>
-<p class="expect"><span>Expect</span>healthy and ready, then <code>&quot;health&quot;:&quot;up&quot;</code> twice.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">healthy and ready, then <code>&quot;health&quot;:&quot;up&quot;</code> twice.</span></p>
 </section>
 <h2 id="phase-7-alertmanager">Phase 7: Alertmanager</h2>
 <section class="step gate" id="step-31"><h3><label class="tick"><input type="checkbox" class="done" data-step="31"><span class="num">31</span></label><span class="st">download, verify, install</span><span class="badge">CHECK</span></h3>
@@ -514,14 +516,14 @@ cd /var/tmp/monitoring-dl</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c66" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c66">sudo curl -fLO https://github.com/prometheus/alertmanager/releases/download/v0.34.1/alertmanager-0.34.1.linux-amd64.tar.gz</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c67" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c67">sudo curl -fLo alertmanager-sha256sums.txt https://github.com/prometheus/alertmanager/releases/download/v0.34.1/sha256sums.txt</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c68" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c68">grep &#x27; alertmanager-0.34.1.linux-amd64.tar.gz$&#x27; alertmanager-sha256sums.txt | sha256sum -c -</code></pre></figure>
-<p class="expect"><span>Expect</span><code>alertmanager-0.34.1.linux-amd64.tar.gz: OK</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>alertmanager-0.34.1.linux-amd64.tar.gz: OK</code>.</span></p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c69" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c69">sudo tar -xzf alertmanager-0.34.1.linux-amd64.tar.gz
 id -u alertmanager &gt;/dev/null 2&gt;&amp;1 || sudo useradd --system --no-create-home --shell /sbin/nologin alertmanager
 sudo install -d -o alertmanager -g alertmanager -m 0750 /etc/alertmanager /var/lib/alertmanager
 sudo install -m 0755 alertmanager-0.34.1.linux-amd64/alertmanager /usr/local/bin/alertmanager
 sudo install -m 0755 alertmanager-0.34.1.linux-amd64/amtool /usr/local/bin/amtool
 /usr/local/bin/alertmanager --version</code></pre></figure>
-<p class="expect"><span>Expect</span><code>alertmanager, version 0.34.1</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>alertmanager, version 0.34.1</code>.</span></p>
 </section>
 <section class="step" id="step-32"><h3><label class="tick"><input type="checkbox" class="done" data-step="32"><span class="num">32</span></label><span class="st">Write the routing config</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c70" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c70">sudo tee /etc/alertmanager/alertmanager.yml &gt;/dev/null &lt;&lt;EOF
@@ -557,9 +559,9 @@ EOF</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c71" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c71">sudo chown -R alertmanager:alertmanager /etc/alertmanager /var/lib/alertmanager
 sudo chmod 0640 /etc/alertmanager/alertmanager.yml
 sudo amtool check-config /etc/alertmanager/alertmanager.yml</code></pre></figure>
-<p class="expect"><span>Expect</span><code>SUCCESS</code> and <code>Found: 1 receiver(s)</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>SUCCESS</code> and <code>Found: 1 receiver(s)</code>.</span></p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c72" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c72">sudo grep -E &#x27;smtp_smarthost|smtp_from|to:&#x27; /etc/alertmanager/alertmanager.yml</code></pre></figure>
-<p class="expect"><span>Expect</span>the real SMTP values.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">the real SMTP values.</span></p>
 </section>
 <section class="step" id="step-33"><h3><label class="tick"><input type="checkbox" class="done" data-step="33"><span class="num">33</span></label><span class="st">Create the service</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c73" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c73">sudo tee /etc/systemd/system/alertmanager.service &gt;/dev/null &lt;&lt;&#x27;EOF&#x27;
@@ -599,7 +601,7 @@ curl -fsS http://127.0.0.1:9093/-/ready; echo</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c75" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c75">sudo amtool --alertmanager.url=http://127.0.0.1:9093 alert add smoketest severity=critical job=install-validation --annotation=summary=&quot;Install validation, please ignore&quot;</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c76" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c76">sudo amtool --alertmanager.url=http://127.0.0.1:9093 alert query</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c77" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c77">curl -fsS http://127.0.0.1:9093/metrics | grep &#x27;^alertmanager_notifications_failed_total&#x27;</code></pre></figure>
-<p class="expect"><span>Expect</span>the alert listed, and every failure counter at 0.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">the alert listed, and every failure counter at 0.</span></p>
 <p>Confirm the email arrived at <code>ALERT_TO</code>. If it did not:</p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c78" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c78">sudo journalctl -u alertmanager -n 50 --no-pager</code></pre></figure>
 <p>Usual causes are the smarthost address, the port, or the TLS requirement. Resolve before continuing.</p>
@@ -626,7 +628,7 @@ EOF</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c83" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c83">sudo dnf makecache --refresh
 sudo dnf install -y grafana-13.2.3
 rpm -q grafana</code></pre></figure>
-<p class="expect"><span>Expect</span><code>grafana-13.2.3-1.x86_64</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>grafana-13.2.3-1.x86_64</code>.</span></p>
 <p>Pin the version so routine updates do not move Grafana.</p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c84" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c84">echo &#x27;exclude=grafana&#x27; | sudo tee -a /etc/yum.repos.d/grafana.repo &gt;/dev/null</code></pre></figure>
 </section>
@@ -636,7 +638,7 @@ sudo chmod 0750 /etc/grafana/tls
 sudo chown root:grafana /etc/grafana/tls/grafana-fullchain.pem /etc/grafana/tls/grafana.key
 sudo chmod 0640 /etc/grafana/tls/grafana-fullchain.pem /etc/grafana/tls/grafana.key
 sudo ls -l /etc/grafana/tls/</code></pre></figure>
-<p class="expect"><span>Expect</span>both files <code>root grafana</code>, mode <code>-rw-r-----</code>. Return to Phase 3 if the directory does not exist.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">both files <code>root grafana</code>, mode <code>-rw-r-----</code>. Return to Phase 3 if the directory does not exist.</span></p>
 </section>
 <section class="step" id="step-37"><h3><label class="tick"><input type="checkbox" class="done" data-step="37"><span class="num">37</span></label><span class="st">Create the secret files</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c86" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c86">sudo install -d -o root -g grafana -m 0750 /etc/grafana/secrets</code></pre></figure>
@@ -649,7 +651,7 @@ sudo ls -l /etc/grafana/tls/</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c90" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c90">sudo chown root:grafana /etc/grafana/secrets/postgres_password /etc/grafana/secrets/secret_key /etc/grafana/secrets/admin_password
 sudo chmod 0640 /etc/grafana/secrets/postgres_password /etc/grafana/secrets/secret_key /etc/grafana/secrets/admin_password
 sudo ls -l /etc/grafana/secrets/</code></pre></figure>
-<p class="expect"><span>Expect</span>three files, each <code>root grafana</code>, mode <code>-rw-r-----</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">three files, each <code>root grafana</code>, mode <code>-rw-r-----</code>.</span></p>
 </section>
 <section class="step" id="step-38"><h3><label class="tick"><input type="checkbox" class="done" data-step="38"><span class="num">38</span></label><span class="st">Record the initial admin password</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c91" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c91">sudo cat /etc/grafana/secrets/admin_password; echo</code></pre></figure>
@@ -735,13 +737,13 @@ sudo chmod 0640 /etc/grafana/grafana.ini</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c95" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c95">sudo grep -nE &#x27;^(domain|root_url) =&#x27; /etc/grafana/grafana.ini
 sudo grep -nE &#x27;^\[&#x27; /etc/grafana/grafana.ini | awk -F&#x27;[][]&#x27; &#x27;{print $2}&#x27; | sort | uniq -d
 sudo grep -c &#x27;__file{&#x27; /etc/grafana/grafana.ini</code></pre></figure>
-<p class="expect"><span>Expect</span>the real FQDN, no output from the duplicate-section check, and <code>3</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">the real FQDN, no output from the duplicate-section check, and <code>3</code>.</span></p>
 </section>
 <section class="step" id="step-40"><h3><label class="tick"><input type="checkbox" class="done" data-step="40"><span class="num">40</span></label><span class="st">Allow Grafana to bind port 443</span></h3>
 <p>Grafana runs as the unprivileged <code>grafana</code> user, which cannot bind a port below 1024 without this capability. Do this before the first start.</p>
 <p>First confirm nothing else already holds the port.</p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c96" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c96">sudo ss -lntp | grep &#x27;:443&#x27; || echo &quot;OK: port 443 free&quot;</code></pre></figure>
-<p class="expect"><span>Expect</span><code>OK: port 443 free</code>. If httpd or nginx is listening, stop and disable it, or keep Grafana on a high port instead.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>OK: port 443 free</code>. If httpd or nginx is listening, stop and disable it, or keep Grafana on a high port instead.</span></p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c97" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c97">sudo install -d -m 0755 /etc/systemd/system/grafana-server.service.d</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c98" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c98">sudo tee /etc/systemd/system/grafana-server.service.d/override.conf &gt;/dev/null &lt;&lt;&#x27;EOF&#x27;
 [Service]
@@ -750,7 +752,7 @@ CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 EOF</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c99" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c99">sudo systemctl daemon-reload
 sudo systemctl show grafana-server -p AmbientCapabilities</code></pre></figure>
-<p class="expect"><span>Expect</span><code>AmbientCapabilities=cap_net_bind_service</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>AmbientCapabilities=cap_net_bind_service</code>.</span></p>
 </section>
 <section class="step" id="step-41"><h3><label class="tick"><input type="checkbox" class="done" data-step="41"><span class="num">41</span></label><span class="st">Provision the data source</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c100" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c100">sudo tee /etc/grafana/provisioning/datasources/prometheus.yml &gt;/dev/null &lt;&lt;&#x27;EOF&#x27;
@@ -774,7 +776,7 @@ sudo chmod 0640 /etc/grafana/provisioning/datasources/prometheus.yml</code></pre
 sudo systemctl enable --now grafana-server
 sudo systemctl status grafana-server --no-pager</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c103" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c103">curl -fsS -k https://127.0.0.1/api/health; echo</code></pre></figure>
-<p class="expect"><span>Expect</span>JSON containing <code>&quot;database&quot;: &quot;ok&quot;</code> and <code>&quot;version&quot;: &quot;13.2.3&quot;</code>. The listener speaks TLS, so a plain <code>http://</code> request fails here. The <code>-k</code> is only because the connection is to 127.0.0.1 rather than the certificate name; Step 43 validates the certificate properly.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">JSON containing <code>&quot;database&quot;: &quot;ok&quot;</code> and <code>&quot;version&quot;: &quot;13.2.3&quot;</code>. The listener speaks TLS, so a plain <code>http://</code> request fails here. The <code>-k</code> is only because the connection is to 127.0.0.1 rather than the certificate name; Step 43 validates the certificate properly.</span></p>
 <p>If it fails to bind with a permissions error, Step 40 did not apply.</p>
 <p>On failure:</p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c104" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c104">sudo journalctl -u grafana-server --since &quot;30 minutes ago&quot; --no-pager</code></pre></figure>
@@ -783,13 +785,13 @@ sudo systemctl status grafana-server --no-pager</code></pre></figure>
 <section class="step gate" id="step-43"><h3><label class="tick"><input type="checkbox" class="done" data-step="43"><span class="num">43</span></label><span class="st">certificate served</span><span class="badge">CHECK</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c105" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c105">source /etc/monitoring/install.env
 curl -fsS --resolve &quot;${GRAFANA_FQDN}:443:127.0.0.1&quot; &quot;https://${GRAFANA_FQDN}/api/health&quot;; echo</code></pre></figure>
-<p class="expect"><span>Expect</span>the same healthy JSON, with no <code>-k</code>. This confirms the certificate validates against the FQDN using the system trust store.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">the same healthy JSON, with no <code>-k</code>. This confirms the certificate validates against the FQDN using the system trust store.</span></p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c106" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c106">echo | openssl s_client -connect 127.0.0.1:443 -servername &quot;$GRAFANA_FQDN&quot; 2&gt;/dev/null | openssl x509 -noout -subject -issuer -enddate</code></pre></figure>
-<p class="expect"><span>Expect</span>the org CA as issuer and the FQDN as subject.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">the org CA as issuer and the FQDN as subject.</span></p>
 </section>
 <section class="step gate" id="step-44"><h3><label class="tick"><input type="checkbox" class="done" data-step="44"><span class="num">44</span></label><span class="st">PostgreSQL is the backend</span><span class="badge">CHECK</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c107" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c107">sudo -u postgres psql -d grafana -Atc &quot;SELECT count(*) FROM information_schema.tables WHERE table_schema=&#x27;public&#x27;;&quot;</code></pre></figure>
-<p class="expect"><span>Expect</span>a count in the hundreds. A zero means Grafana fell back to SQLite.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">a count in the hundreds. A zero means Grafana fell back to SQLite.</span></p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c108" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c108">sudo ls -l /var/lib/grafana/grafana.db 2&gt;/dev/null &amp;&amp; echo &quot;WARNING: sqlite file present, recheck [database]&quot; || echo &quot;OK: no sqlite database&quot;</code></pre></figure>
 </section>
 <section class="step gate" id="step-45"><h3><label class="tick"><input type="checkbox" class="done" data-step="45"><span class="num">45</span></label><span class="st">firewall and listeners</span><span class="badge">CHECK</span></h3>
@@ -798,18 +800,18 @@ sudo firewall-cmd --permanent --add-rich-rule=&quot;rule family=\&quot;ipv4\&quo
 sudo firewall-cmd --reload
 sudo firewall-cmd --list-all</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c110" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c110">sudo ss -lntp | grep -E &#x27;:443|9090|9093|9100|5432&#x27;</code></pre></figure>
-<p class="expect"><span>Expect</span>only port 443 on <code>0.0.0.0</code>. Ports 9090, 9093, 9100 and 5432 must be on loopback.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">only port 443 on <code>0.0.0.0</code>. Ports 9090, 9093, 9100 and 5432 must be on loopback.</span></p>
 </section>
 <h2 id="phase-9-user-access">Phase 9: User access</h2>
 <section class="step gate" id="step-46"><h3><label class="tick"><input type="checkbox" class="done" data-step="46"><span class="num">46</span></label><span class="st">confirm DNS resolves to this host</span><span class="badge">CHECK</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c111" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c111">source /etc/monitoring/install.env
 dig +short &quot;$GRAFANA_FQDN&quot;
 getent hosts &quot;$GRAFANA_FQDN&quot;</code></pre></figure>
-<p class="expect"><span>Expect</span>the address matches <code>MON_IP</code>. If it is still empty, the Step 9 request has not propagated. Grafana is already serving; only user access by name is blocked.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">the address matches <code>MON_IP</code>. If it is still empty, the Step 9 request has not propagated. Grafana is already serving; only user access by name is blocked.</span></p>
 </section>
 <section class="step gate" id="step-47"><h3><label class="tick"><input type="checkbox" class="done" data-step="47"><span class="num">47</span></label><span class="st">reach Grafana by name from this host</span><span class="badge">CHECK</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c112" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c112">curl -fsS &quot;https://${GRAFANA_FQDN}/api/health&quot;; echo</code></pre></figure>
-<p class="expect"><span>Expect</span>healthy JSON, with no <code>-k</code>. This is the first call that uses real DNS and full certificate validation together, so it exercises the same path a browser will.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">healthy JSON, with no <code>-k</code>. This is the first call that uses real DNS and full certificate validation together, so it exercises the same path a browser will.</span></p>
 <p>A certificate error here means the name in DNS does not match the certificate subject. Compare:</p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c113" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c113">sudo openssl x509 -noout -subject -in /etc/grafana/tls/grafana-fullchain.pem
 echo &quot;$GRAFANA_FQDN&quot;</code></pre></figure>
@@ -818,7 +820,7 @@ echo &quot;$GRAFANA_FQDN&quot;</code></pre></figure>
 <p>Run this from a machine inside <code>APPROVED_CIDR</code>, not from the server. Substitute the FQDN.</p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c114" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c114">curl -fsS https://&lt;GRAFANA_FQDN&gt;/api/health</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c115" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c115">curl -fsSI https://&lt;GRAFANA_FQDN&gt;/login | head -1</code></pre></figure>
-<p class="expect"><span>Expect</span>healthy JSON, then <code>HTTP/2 200</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">healthy JSON, then <code>HTTP/2 200</code>.</span></p>
 <p>If it times out, the firewall rule from Step 45 does not cover the client. Check the source address the server actually sees:</p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c116" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c116">sudo firewall-cmd --list-rich-rules</code></pre></figure>
 <p>Then open a browser to <code>https://&lt;GRAFANA_FQDN&gt;/</code> and log in as <code>admin</code> with the password from Step 38. The browser must show a valid certificate with no warning.</p>
@@ -826,11 +828,11 @@ echo &quot;$GRAFANA_FQDN&quot;</code></pre></figure>
 <h2 id="phase-10-hardening-checks">Phase 10: Hardening checks</h2>
 <section class="step gate" id="step-49"><h3><label class="tick"><input type="checkbox" class="done" data-step="49"><span class="num">49</span></label><span class="st">anonymous access refused</span><span class="badge">CHECK</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c117" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c117">curl -s -k -o /dev/null -w &#x27;anon api: %{http_code}\n&#x27; https://127.0.0.1/api/org</code></pre></figure>
-<p class="expect"><span>Expect</span><code>anon api: 401</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>anon api: 401</code>.</span></p>
 </section>
 <section class="step gate" id="step-50"><h3><label class="tick"><input type="checkbox" class="done" data-step="50"><span class="num">50</span></label><span class="st">self-registration disabled</span><span class="badge">CHECK</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c118" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c118">curl -s -k https://127.0.0.1/login | grep -ci &quot;sign up&quot; | xargs -I{} echo &quot;signup mentions: {}&quot;</code></pre></figure>
-<p class="expect"><span>Expect</span><code>0</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>0</code>.</span></p>
 </section>
 <section class="step" id="step-51"><h3><label class="tick"><input type="checkbox" class="done" data-step="51"><span class="num">51</span></label><span class="st">Rotate the admin password</span></h3>
 <p>Generates the password, applies it, keeps the secret file in step, and prints the value.</p>
@@ -840,23 +842,23 @@ printf %s &quot;$NEWPW&quot; | sudo tee /etc/grafana/secrets/admin_password &gt;
 sudo chown root:grafana /etc/grafana/secrets/admin_password
 sudo chmod 0640 /etc/grafana/secrets/admin_password
 printf &#x27;\nNew admin password: %s\n\n&#x27; &quot;$NEWPW&quot;</code></pre></figure>
-<p class="expect"><span>Expect</span><code>Admin password changed successfully</code>, then the new password printed.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>Admin password changed successfully</code>, then the new password printed.</span></p>
 <p>Store it in the password manager, then clear it from the shell. The password was typed into the shell and printed to the terminal, so clear the session history and the scrollback.</p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c120" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c120">unset NEWPW
 history -c</code></pre></figure>
 <p class="checkline">log in with the new password.</p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c121" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c121">source /etc/monitoring/install.env
 curl -fsS -u &quot;admin:$(sudo cat /etc/grafana/secrets/admin_password)&quot; -k https://127.0.0.1/api/org | head -c 200; echo</code></pre></figure>
-<p class="expect"><span>Expect</span>JSON describing the Main Org. A 401 means the rotation did not apply.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">JSON describing the Main Org. A 401 means the rotation did not apply.</span></p>
 </section>
 <section class="step gate" id="step-52"><h3><label class="tick"><input type="checkbox" class="done" data-step="52"><span class="num">52</span></label><span class="st">PostgreSQL on loopback only</span><span class="badge">CHECK</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c122" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c122">sudo ss -lntp | grep 5432</code></pre></figure>
-<p class="expect"><span>Expect</span><code>127.0.0.1:5432</code> and <code>[::1]:5432</code> only.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>127.0.0.1:5432</code> and <code>[::1]:5432</code> only.</span></p>
 </section>
 <section class="step gate" id="step-53"><h3><label class="tick"><input type="checkbox" class="done" data-step="53"><span class="num">53</span></label><span class="st">SELinux and file modes</span><span class="badge">CHECK</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c123" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c123">getenforce
 sudo find /etc/grafana/secrets /etc/monitoring/secrets /etc/grafana/tls -type f ! -perm 0640 ! -perm 0600 -ls</code></pre></figure>
-<p class="expect"><span>Expect</span><code>Enforcing</code>, and no output from <code>find</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>Enforcing</code>, and no output from <code>find</code>.</span></p>
 </section>
 <h2 id="phase-11-backups">Phase 11: Backups</h2>
 <section class="step" id="step-54"><h3><label class="tick"><input type="checkbox" class="done" data-step="54"><span class="num">54</span></label><span class="st">Install the backup script</span></h3>
@@ -889,7 +891,7 @@ EOF</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c126" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c126">sudo /usr/local/sbin/monitoring-backup.sh</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c127" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c127">source /etc/monitoring/install.env
 sudo ls -lh &quot;$BACKUP_PATH/postgres&quot; &quot;$BACKUP_PATH/config&quot;</code></pre></figure>
-<p class="expect"><span>Expect</span><code>backup complete</code>, then two non-empty files, the archive at <code>-rw-------</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>backup complete</code>, then two non-empty files, the archive at <code>-rw-------</code>.</span></p>
 </section>
 <section class="step" id="step-56"><h3><label class="tick"><input type="checkbox" class="done" data-step="56"><span class="num">56</span></label><span class="st">Schedule nightly</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c128" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c128">sudo tee /etc/systemd/system/monitoring-backup.service &gt;/dev/null &lt;&lt;&#x27;EOF&#x27;
@@ -915,7 +917,7 @@ EOF</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c130" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c130">sudo systemctl daemon-reload
 sudo systemctl enable --now monitoring-backup.timer
 sudo systemctl list-timers monitoring-backup.timer --no-pager</code></pre></figure>
-<p class="expect"><span>Expect</span>the timer listed with a next run near 01:30.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">the timer listed with a next run near 01:30.</span></p>
 </section>
 <section class="step gate" id="step-57"><h3><label class="tick"><input type="checkbox" class="done" data-step="57"><span class="num">57</span></label><span class="st">restore test</span><span class="badge">CHECK</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c131" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c131">source /etc/monitoring/install.env
@@ -923,7 +925,7 @@ LATEST_DUMP=&quot;$(sudo ls -1t $BACKUP_PATH/postgres/grafana_*.dump | head -1)&
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c132" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c132">sudo -u postgres createdb grafana_restore_test
 sudo -u postgres pg_restore --dbname=grafana_restore_test &quot;$LATEST_DUMP&quot;
 sudo -u postgres psql -d grafana_restore_test -Atc &quot;SELECT count(*) FROM org;&quot;</code></pre></figure>
-<p class="expect"><span>Expect</span>a count of 1 or more.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">a count of 1 or more.</span></p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c133" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c133">sudo -u postgres dropdb grafana_restore_test</code></pre></figure>
 </section>
 <section class="step" id="step-58"><h3><label class="tick"><input type="checkbox" class="done" data-step="58"><span class="num">58</span></label><span class="st">Replicate off-host</span></h3>
@@ -966,14 +968,14 @@ EOF</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c139" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c139">sudo systemctl daemon-reload
 sudo systemctl enable --now grafana-cert-check.timer
 sudo /usr/local/sbin/check-grafana-cert.sh &amp;&amp; echo &quot;cert check ran clean&quot;</code></pre></figure>
-<p class="expect"><span>Expect</span><code>cert check ran clean</code>, with no mail sent while expiry is more than 30 days out.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt"><code>cert check ran clean</code>, with no mail sent while expiry is more than 30 days out.</span></p>
 </section>
 <h2 id="phase-12-final-validation">Phase 12: Final validation</h2>
 <section class="step" id="step-60"><h3><label class="tick"><input type="checkbox" class="done" data-step="60"><span class="num">60</span></label><span class="st">Services</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c140" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c140">source /etc/monitoring/install.env
 sudo systemctl is-active postgresql prometheus alertmanager node_exporter grafana-server
 sudo systemctl is-enabled postgresql prometheus alertmanager node_exporter grafana-server</code></pre></figure>
-<p class="expect"><span>Expect</span>five times <code>active</code>, then five times <code>enabled</code>.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">five times <code>active</code>, then five times <code>enabled</code>.</span></p>
 </section>
 <section class="step" id="step-61"><h3><label class="tick"><input type="checkbox" class="done" data-step="61"><span class="num">61</span></label><span class="st">Endpoints and versions</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c141" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c141">curl -fsS http://127.0.0.1:9090/-/ready; echo
@@ -983,14 +985,14 @@ curl -fsS -k https://127.0.0.1/api/health; echo</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c142" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c142">curl -fsS &#x27;http://127.0.0.1:9090/api/v1/targets?state=active&#x27; | grep -o &#x27;&quot;health&quot;:&quot;[a-z]*&quot;&#x27;
 curl -fsS http://127.0.0.1:9090/api/v1/alertmanagers | head -c 300; echo
 curl -fsS http://127.0.0.1:9090/api/v1/rules | grep -o &#x27;&quot;name&quot;:&quot;[A-Za-z]*&quot;&#x27; | sort -u</code></pre></figure>
-<p class="expect"><span>Expect</span>two targets up, the Alertmanager listed as active, and six rule names.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">two targets up, the Alertmanager listed as active, and six rule names.</span></p>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c143" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c143">sudo ss -lntp | grep -E &#x27;:443|9090|9093|9100|5432&#x27;
 sudo systemctl list-timers monitoring-backup.timer grafana-cert-check.timer --no-pager</code></pre></figure>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c144" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c144">rpm -q grafana postgresql-server
 /usr/local/bin/prometheus --version 2&gt;&amp;1 | head -1
 /usr/local/bin/alertmanager --version 2&gt;&amp;1 | head -1
 /usr/local/bin/node_exporter --version 2&gt;&amp;1 | head -1</code></pre></figure>
-<p class="expect"><span>Expect</span>Grafana 13.2.3, PostgreSQL 16.x, Prometheus 3.13.4, Alertmanager 0.34.1, Node Exporter 1.12.1.</p>
+<p class="expect"><span class="lbl">Expect</span><span class="etxt">Grafana 13.2.3, PostgreSQL 16.x, Prometheus 3.13.4, Alertmanager 0.34.1, Node Exporter 1.12.1.</span></p>
 </section>
 <section class="step" id="step-62"><h3><label class="tick"><input type="checkbox" class="done" data-step="62"><span class="num">62</span></label><span class="st">Remove the download directory</span></h3>
 <figure class="cmd" data-lang="shell"><figcaption><span class="lang">shell</span><button class="copy" type="button" data-target="c145" aria-label="Copy to clipboard"><svg viewBox="0 0 16 16" aria-hidden="true" width="13" height="13"><path d="M5.5 1.5h6a1 1 0 0 1 1 1v8"/><rect x="3" y="4" width="8" height="10.5" rx="1"/></svg><span>Copy</span></button></figcaption><pre><code id="c145">sudo rm -rf /var/tmp/monitoring-dl</code></pre></figure>
