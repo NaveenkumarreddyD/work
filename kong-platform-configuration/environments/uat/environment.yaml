@@ -1,8 +1,0 @@
-name: uat
-org: nonprod
-# Fail closed until platform team configures and validates the real target.
-enabled: false
-konnect_addr: https://us.api.konghq.com
-control_planes:
-  internal: REPLACE_UAT_INTERNAL_CP
-  external: REPLACE_UAT_EXTERNAL_CP

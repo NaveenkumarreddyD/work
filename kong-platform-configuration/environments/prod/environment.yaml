@@ -1,8 +1,0 @@
-name: prod
-org: prod
-# Fail closed until platform team configures and validates the real target.
-enabled: false
-konnect_addr: https://us.api.konghq.com
-control_planes:
-  internal: REPLACE_PROD_INTERNAL_CP
-  external: REPLACE_PROD_EXTERNAL_CP

@@ -1,8 +1,0 @@
-name: dev
-org: nonprod
-# Fail closed until platform team configures and validates the real target.
-enabled: false
-konnect_addr: https://us.api.konghq.com
-control_planes:
-  internal: REPLACE_DEV_INTERNAL_CP
-  external: REPLACE_DEV_EXTERNAL_CP
