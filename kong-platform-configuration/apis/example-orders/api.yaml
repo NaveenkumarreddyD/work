@@ -1,0 +1,22 @@
+name: example-orders
+team: integrations
+owner: REPLACE_WITH_TEAM_EMAIL
+summary: Example Orders API. Delete this sample after onboarding a real API.
+tier: internal
+# An explicit change review is required before enabling this example.
+approved_for_deployment: false
+service:
+  name: example-orders-service
+  connect_timeout: 5000
+  read_timeout: 30000
+  write_timeout: 30000
+  retries: 1
+routes:
+  - name: example-orders-v1
+    paths:
+      - /orders/orders/v1
+    methods: [GET]
+    strip_path: false
+    preserve_host: false
+# OIDC bearer authentication is generated for every API Service.
+# More complex requirements (ACLs, transforms, rate limits) need a reviewed extension.

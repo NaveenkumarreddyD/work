@@ -1,0 +1,11 @@
+openapi: 3.0.3
+info:
+  title: Example Orders API
+  version: 1.0.0
+paths:
+  /orders/orders/v1:
+    get:
+      summary: List example orders
+      responses:
+        '200':
+          description: OK

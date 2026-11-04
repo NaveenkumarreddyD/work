@@ -1,0 +1,6 @@
+# Replace group with your real GitLab group before protecting main.
+* @YOUR-GITLAB-GROUP/kong-platform
+/apis/ @YOUR-GITLAB-GROUP/kong-platform
+/environments/ @YOUR-GITLAB-GROUP/kong-platform
+/Jenkinsfile @YOUR-GITLAB-GROUP/kong-platform
+/scripts/ @YOUR-GITLAB-GROUP/kong-platform
