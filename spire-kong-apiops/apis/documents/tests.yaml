@@ -1,0 +1,20 @@
+# Change the success body assertion to a real stable property of your backend response.
+tests:
+  - name: authenticated-read
+    method: GET
+    path: /content/documents/v1
+    auth: valid
+    expected_status: 200
+    body_contains: documents
+  - name: missing-token-rejected
+    method: GET
+    path: /content/documents/v1
+    auth: none
+    expected_status: 401
+    body_contains: ''
+  - name: invalid-token-rejected
+    method: GET
+    path: /content/documents/v1
+    auth: invalid
+    expected_status: 401
+    body_contains: ''

@@ -1,0 +1,21 @@
+# Start here for environment values. Keep disabled until platform review.
+enabled: false
+# Front door clients call through F5/Kong; not the backend.
+gateway_url: https://REPLACE_TRAINING_GATEWAY.example.invalid
+variables:
+  # Backend hostname only: no https:// and no path.
+  DECK_BACKEND_HOST: replace-training-customers-backend.example.invalid
+  DECK_BACKEND_PORT: 443
+  # Ask IAM for the actual access-token issuer, audience and role.
+  DECK_OIDC_ISSUER: https://login.microsoftonline.com/REPLACE_TENANT/v2.0
+  DECK_OIDC_AUDIENCE: api://REPLACE_TRAINING_CUSTOMERS_AUDIENCE
+  DECK_REQUIRED_ROLE: REPLACE_APPROVED_APPLICATION_ROLE
+  DECK_RATE_MINUTE: 60
+  # local is per node; PREPROD/PROD require reviewed Redis counters.
+  DECK_RATE_POLICY: local
+  # Keep this public salt stable. It is not an authentication secret.
+  DECK_CACHE_TOKENS_SALT: c7bf19a41beacecd26676b4da4498d3b
+  DECK_REDIS_HOST: replace-training-redis.example.invalid
+  DECK_REDIS_PORT: 6379
+  # Supported Vault reference only; never paste the password.
+  DECK_REDIS_PASSWORD_REF: '{vault://REPLACE_VAULT_PREFIX/redis-training-password}'

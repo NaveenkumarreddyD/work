@@ -1,0 +1,15 @@
+{
+  "repository_url": null,
+  "release_registry": null,
+  "drift_targets": [],
+  "scm_credentials_id": null,
+  "require_signed_tags": true,
+  "jobs": {"build": "Kong/Build", "dev": "Kong/Deploy-dev", "uat": "Kong/Deploy-uat", "training": "Kong/Deploy-training", "preprod": "Kong/Deploy-preprod", "prod": "Kong/Deploy-prod"},
+  "targets": {
+    "dev": {"konnect_addr": null, "control_planes": {"internal": null, "external": null}, "token_credential": null, "approvers": null, "second_approvers": null},
+    "uat": {"konnect_addr": null, "control_planes": {"internal": null, "external": null}, "token_credential": null, "approvers": null, "second_approvers": null},
+    "training": {"konnect_addr": null, "control_planes": {"internal": null, "external": null}, "token_credential": null, "approvers": null, "second_approvers": null},
+    "preprod": {"konnect_addr": null, "control_planes": {"internal": null, "external": null}, "token_credential": null, "approvers": null, "second_approvers": null},
+    "prod": {"konnect_addr": null, "control_planes": {"internal": null, "external": null}, "token_credential": null, "approvers": null, "second_approvers": null}
+  }
+}

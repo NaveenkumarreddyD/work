@@ -1,0 +1,23 @@
+openapi: 3.0.3
+info:
+  title: Documents API (disabled example)
+  version: 1.0.0
+paths:
+  /content/documents/v1:
+    get:
+      summary: Read documents
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Documents response
+        '401':
+          description: Authentication rejected
+        '403':
+          description: Permission rejected
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

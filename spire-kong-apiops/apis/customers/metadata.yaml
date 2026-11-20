@@ -1,0 +1,7 @@
+# Ownership and classification; no passwords or tokens.
+name: customers
+owner: REPLACE_OWNER@example.invalid
+team: integrations
+domain: crm
+data_class: internal
+tier: internal

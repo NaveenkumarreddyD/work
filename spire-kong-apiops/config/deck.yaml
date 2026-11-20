@@ -1,0 +1,3 @@
+# A real YAML config prevents loading an operator's ~/.deck.yaml.
+# Credentials and trusted target are supplied explicitly by the protected job.
+analytics: false

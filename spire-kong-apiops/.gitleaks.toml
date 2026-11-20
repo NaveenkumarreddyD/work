@@ -1,0 +1,7 @@
+[extend]
+useDefault = true
+# These are public token-cache salts, not client secrets or bearer tokens.
+[[allowlists]]
+description = "Explicitly named non-secret OIDC cache salts"
+regexTarget = "line"
+regexes = ['(?i)(DECK_CACHE_TOKENS_SALT|cache_tokens_salt): [a-f0-9]{32}']

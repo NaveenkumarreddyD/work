@@ -1,0 +1,86 @@
+# Native Kong YAML: Service = backend, Route = incoming endpoint, plugins = API policies.
+# API developers edit these entities; shared scripts/Jenkins handle delivery.
+_format_version: '3.0'
+# Keep this owner scope stable across releases; it is not a version tag.
+_info:
+  select_tags:
+  - owner-documents
+services:
+- name: documents-service
+  protocol: https
+  tls_verify: true
+  # Environment references are filled from apis/<api>/overlays/<env>.yaml.
+  host: ${{ env "DECK_BACKEND_HOST" }}
+  port: ${{ env "DECK_BACKEND_PORT" }}
+  # Milliseconds. Retries are explicit because retrying writes can duplicate work.
+  connect_timeout: 5000
+  read_timeout: 30000
+  write_timeout: 30000
+  retries: 0
+  tags:
+  - owner-documents
+  - team-integrations
+  - domain-content
+  - data-internal
+  # Public endpoints. Update openapi.yaml and tests.yaml when these change.
+  routes:
+  - name: documents-v1
+    paths:
+    - /content/documents/v1
+    methods:
+    - GET
+    protocols:
+    - https
+    strip_path: false
+    preserve_host: false
+    tags:
+    - owner-documents
+  # Service policies cover every Route below this Service.
+  plugins:
+  - name: openid-connect
+    tags:
+    - owner-documents
+    config:
+      issuer: ${{ env "DECK_OIDC_ISSUER" }}
+      auth_methods:
+      - bearer
+      bearer_token_param_type:
+      - header
+      ssl_verify: true
+      cache_tokens_salt: ${{ env "DECK_CACHE_TOKENS_SALT" }}
+      # Intended recipient of the incoming token, supplied by IAM.
+      audience_required:
+      - ${{ env "DECK_OIDC_AUDIENCE" }}
+      roles_claim:
+      - roles
+      # Client-credentials application role; delegated scopes use a different design.
+      roles_required:
+      - ${{ env "DECK_REQUIRED_ROLE" }}
+  - name: rate-limiting
+    tags:
+    - owner-documents
+    config:
+      minute: ${{ env "DECK_RATE_MINUTE" }}
+      policy: ${{ env "DECK_RATE_POLICY" }}
+      # This is a Service budget, not a separate quota per customer.
+      limit_by: service
+      # Required when policy=redis; passwords stay in Vault, never in this file.
+      redis:
+        host: ${{ env "DECK_REDIS_HOST" }}
+        port: ${{ env "DECK_REDIS_PORT" }}
+        ssl: true
+        ssl_verify: true
+        password: '${{ env "DECK_REDIS_PASSWORD_REF" }}'
+  - name: request-size-limiting
+    tags:
+    - owner-documents
+    config:
+      allowed_payload_size: 1
+      size_unit: megabytes
+  - name: correlation-id
+    tags:
+    - owner-documents
+    config:
+      header_name: X-Correlation-ID
+      generator: uuid
+      echo_downstream: true

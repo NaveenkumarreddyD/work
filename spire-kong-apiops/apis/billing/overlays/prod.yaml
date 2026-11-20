@@ -1,0 +1,24 @@
+# Keep false until this API/environment is reviewed. This does not delete a live API.
+enabled: false
+# Front door clients call through F5/Kong; not the backend URL.
+gateway_url: https://REPLACE_PROD_GATEWAY.example.invalid
+variables:
+  # Destination hostname only, without https:// or a path.
+  DECK_BACKEND_HOST: replace-prod-backend.example.invalid
+  DECK_BACKEND_PORT: 443
+  # IAM-approved issuer for the actual access token.
+  DECK_OIDC_ISSUER: https://login.microsoftonline.com/REPLACE_TENANT/v2.0
+  # Audience identifying this API; ask IAM.
+  DECK_OIDC_AUDIENCE: api://REPLACE_PROD_AUDIENCE
+  # Required application role for the client-credentials example.
+  DECK_REQUIRED_ROLE: Partner.REPLACE_APPROVED_APPLICATION_ROLE
+  # Requests per minute for the Service budget.
+  DECK_RATE_MINUTE: 60
+  # local = per node; redis = distributed counters. PREPROD/PROD require Redis.
+  DECK_RATE_POLICY: local
+  # Stable public salt; keep it across deployments. Not an authentication secret.
+  DECK_CACHE_TOKENS_SALT: e2ad62c08f4de9b091aa18b811dccd42
+  DECK_REDIS_HOST: replace-prod-redis.example.invalid
+  DECK_REDIS_PORT: 6379
+  # A supported Vault reference, never the password itself.
+  DECK_REDIS_PASSWORD_REF: '{vault://REPLACE_VAULT_PREFIX/redis-prod-password}'

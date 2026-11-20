@@ -1,0 +1,15 @@
+# Replace every group below with real GitLab groups and enable required approval rules.
+# A file alone does not enforce approvals. These are placeholders, not existing teams.
+[Platform]
+* @REPLACE_PLATFORM_GROUP
+/konnect/ @REPLACE_PLATFORM_GROUP
+/platform/ @REPLACE_PLATFORM_GROUP
+/governance/ @REPLACE_PLATFORM_GROUP
+/pipelines/ @REPLACE_PLATFORM_GROUP
+/scripts/ @REPLACE_PLATFORM_GROUP
+/tests/ @REPLACE_PLATFORM_GROUP
+/Jenkinsfile @REPLACE_PLATFORM_GROUP
+/requirements* @REPLACE_PLATFORM_GROUP
+/CODEOWNERS @REPLACE_PLATFORM_GROUP
+[API owners]
+/apis/ @REPLACE_INTEGRATIONS_GROUP
