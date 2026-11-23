@@ -45,6 +45,19 @@ python3 -m pip install --require-hashes -r requirements.lock
 3. Ask the APIOps maintainer to list the API in the DEV target file (`environments/nonprod/dev/target.yaml`) and confirm the target, register the approved smoke-test gateway URL and configure the API's Jenkins smoke credential. Enable the DEV overlay when ready.
 4. Open a GitLab merge request. Jenkins checks all environments. After merge, look for the successful DEV deployment and its receipt.
 
+## When to update target.yaml
+
+Each environment has one `target.yaml` shared by its APIs. For example, the [UAT target](environments/nonprod/uat/target.yaml) identifies the existing Konnect control plane Jenkins will use and lists the APIs registered for UAT.
+
+| What changed? | What to update |
+|---|---|
+| An API is being onboarded to UAT. | Ask an APIOps maintainer to add its name to the UAT target’s `apis` list before enabling its UAT settings. |
+| The platform team changed the UAT destination. | The maintainer updates the UAT target and coordinates the matching change to Jenkins’ trusted settings. See the [setup guide](docs/SETUP.md). |
+| Only the Payments UAT backend changed. | Update the [Payments UAT settings](environments/nonprod/uat/apis/billing/payments.yaml). |
+| A Payments route changed. | Update the route, contract and smoke tests together in the [Payments API folder](apis/billing/payments). |
+
+**Promoting an already configured API requires no file changes.** Start the destination job in Jenkins with the tested tag and package build, then review the proposed changes. See [Promote a release](#promote-a-release).
+
 ## Update a Route
 
 Edit the existing API folder. For a new path, add the Route to `kong.yaml`, describe the same path and method in `openapi.yaml`, and update `tests.yaml`. Preserve the API's ownership tag. Submit the three files together for review. [Developer walkthrough](docs/ADD_AN_API.md)
@@ -82,6 +95,6 @@ Use Python 3.11+, decK 1.70.0 and Gitleaks 8.30.1. Run `bash scripts/check.sh` a
 
 ## How the folders map to Kong’s proposal
 
-`environments/nonprod/` contains dev, uat and training. `environments/prod/` contains preprod and prod. Each environment has one `target.yaml`. It identifies the existing Konnect control plane and lists the APIs registered for that environment. The `tier` in API metadata selects API-specific policy checks. Both profiles use the same environment target. A maintainer lists the API under `apis` before its environment overlay can be enabled. Registration alone does not deploy it.
+`environments/nonprod/` contains dev, uat and training. `environments/prod/` contains preprod and prod. Both API policy profiles use the same environment target.
 
 As in [KongAir](https://github.com/Kong/KongAir/tree/main), each team keeps its API contract next to the configuration it owns. This repository uses GitLab for review, Jenkins for delivery and decK for Gateway Services, Routes and plugins. The separate platform repository owns control-plane provisioning and shared policies.
