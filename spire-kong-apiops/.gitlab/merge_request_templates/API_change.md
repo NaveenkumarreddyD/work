@@ -9,6 +9,6 @@ Owner and change ticket:
 - [ ] DEV is the only environment being enabled, unless higher-environment values have owner approval.
 - [ ] Authentication, authorization, TLS, payload and rate policies were reviewed.
 - [ ] Deletions, breaking changes and recovery steps are described below.
-- [ ] API owner and platform/security review requirements are satisfied.
+- [ ] API owner and APIOps/security review requirements are satisfied.
 
 Rollback / compatibility notes:

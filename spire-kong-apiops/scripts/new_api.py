@@ -53,7 +53,7 @@ def create_api(root, *, name, path, owner, team='integrations', tier='internal',
         'summary':f'Read {name}', 'security':[{'bearerAuth':[]}],
         'responses':{'200':{'description':'Successful response'},'401':{'description':'Authentication rejected'},'403':{'description':'Permission rejected'}}}}},
         'components':{'securitySchemes':{'bearerAuth':{'type':'http','scheme':'bearer','bearerFormat':'JWT'}}}}
-    native=load(root/'templates'/f'{tier}.kong.yaml')
+    native=load(root/'scripts/templates'/f'{tier}.kong.yaml')
     native['_info']={'select_tags':[tag]}
     service=native['services'][0]; service['name']=f'{name}-service'
     service['tags']=[tag,f'team-{team}',f'domain-{domain}',f'data-{classification}']
@@ -67,13 +67,13 @@ def create_api(root, *, name, path, owner, team='integrations', tier='internal',
     native_text=native_text.replace('_info:\n','# Management boundary: never reuse another API\'s owner tag.\n_info:\n',1)
     native_text=native_text.replace('services:\n','# Service = destination backend. Variables come from apis/<api>/overlays/.\nservices:\n',1)
     native_text=native_text.replace('  routes:\n','  # Route = public request path and HTTP method. Update openapi.yaml too.\n  routes:\n',1)
-    native_text=native_text.replace('  plugins:\n','  # Policies apply to every Route on this Service. Review governance/README.md.\n  plugins:\n',1)
+    native_text=native_text.replace('  plugins:\n','  # Policies apply to every Route on this Service. Review docs/OPERATIONS.md.\n  plugins:\n',1)
     content={destinations[0]:'# Ownership and classification; no passwords or tokens.\n'+dump(metadata),
              destinations[1]:'# EDIT THIS FILE: native Kong configuration, not generated deployment output.\n'+native_text,
              destinations[2]:'# API contract. Keep paths/methods aligned with kong.yaml.\n'+dump(spec),
              destinations[3]:'# Replace the success body assertion with a real stable response property.\n'+dump(tests)}
     for env,dest in zip(ENVS,destinations[4:]):
-        values=load(root/'templates/environment.yaml')
+        values=load(root/'scripts/templates/environment.yaml')
         values['enabled']=False
         values['gateway_url']=f'https://REPLACE_{env.upper()}_GATEWAY.example.invalid'
         v=values['variables']

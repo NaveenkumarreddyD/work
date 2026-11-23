@@ -1,8 +1,0 @@
-# Who owns/supports this API? Keep name equal to its folder name.
-# tier selects the internal or external Control Plane; it does not create a gateway.
-name: billing
-owner: REPLACE_TEAM_EMAIL
-team: integrations
-domain: finance
-data_class: confidential
-tier: external

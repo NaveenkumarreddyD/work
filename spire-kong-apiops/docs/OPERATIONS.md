@@ -35,7 +35,7 @@ No automatic blind rollback is attempted. A newly introduced API with no previou
 
 Configure the separate Drift job's explicit target list after deployment. It takes the environment lock, selects the latest successful deployment **for that API**, downloads its exact original package using the recorded package build, checks target/checksums and runs read-only `deck gateway diff`. Rollback success becomes the new baseline. Nonzero differences, missing artifacts/history, authentication/schema/connectivity errors all fail the drift run; none trigger sync.
 
-A disabled/removed API is not automatically deleted. Keep its old scope on the drift target list until platform completes retirement. Entirely unmanaged entities without this repository's ownership tag are intentionally invisible to these drift checks. Platform needs separate CP inventory, backup and governance checks for shared/unmanaged resources.
+A disabled/removed API is not automatically deleted. Keep its old scope on the drift target list until API owners complete approved retirement. Entirely unmanaged entities without this repository's ownership tag are intentionally invisible to these drift checks. Platform needs separate CP inventory, backup and governance checks for shared/unmanaged resources.
 
 An ad hoc scoped backup is available to authorized operators through `scripts/deploy.sh backup PACKAGE API ENV EVIDENCE_DIRECTORY`, with the same trusted expected-target variables and approved encrypted BACKUP_DIR. It calls `deck gateway dump --select-tag owner-<api>`. Handle outputs as sensitive and test restore separately; do not feed a raw dump into automated release promotion. Ordinary nondeleting changes do not require a dump every time. Agree an encrypted periodic backup/retention policy with platform in addition to Git/artifact retention.
 
@@ -54,3 +54,11 @@ An ad hoc scoped backup is available to authorized operators through `scripts/de
 | Drift job missing history | Restore retained package/receipt or onboard scope through an approved deployment |
 
 Current smoke checks use a GET/HEAD endpoint and valid, missing and invalid bearer credentials. They do not prove all nodes/sites converged, performance under load, tenant isolation, authorization denial for an otherwise-valid wrong-role token, certificate rotation, Redis failover or full business behavior. Add those acceptance tests with API/security/platform owners before production enablement.
+
+## APIOps scope and API rules
+
+The platform team owns its separate repository. This repository consumes references to its existing Control Planes, Vault definitions, networking and other shared services. It never deploys Control Planes, global plugins, Consumers, Vault definitions or infrastructure. Keep those out of API packages.
+
+The current example API baseline requires HTTPS upstream/downstream, verified upstream TLS, explicit methods/timeouts/retries, Service-scoped bearer OIDC with audience/role checks, rate/payload limits and correlation IDs. External API starter templates also include IP restrictions and OAS validation; PREPROD/PROD require reviewed Redis counters. These are proposed API rules inherited from the earlier design, not claimed company standards. API/security owners must review them and confirm licensed plugin support. Implementation checks live in scripts/validate.py.
+
+Use one stable owner-<api> selection tag for each API's Service, Routes and plugins. Never mix shared resources or another API's owner tag into that scope. The initial profile is one Service per API, explicit literal prefix paths /domain/api/v1/... and read-only GET/HEAD smoke checks. Prefix matching can expose subpaths; regex/parameterized routing, delegated user auth and per-client quotas need reviewed validator/test extensions.

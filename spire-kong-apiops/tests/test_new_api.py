@@ -56,8 +56,8 @@ class NewApiTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'exists|symlink'):self.create()
         self.assertEqual(list(external.iterdir()),[])
     def test_target_enablement_not_changed(self):
-        before=(self.root/'konnect/nonprod/dev/target.yaml').read_bytes();self.create()
-        self.assertEqual((self.root/'konnect/nonprod/dev/target.yaml').read_bytes(),before)
+        before=(self.root/'environments/nonprod/dev/target.yaml').read_bytes();self.create()
+        self.assertEqual((self.root/'environments/nonprod/dev/target.yaml').read_bytes(),before)
     def test_external_spec_and_test_paths_agree(self):
         self.create(name='partner-api',tier='external')
         spec=yaml.safe_load((self.root/'apis/partner-api/openapi.yaml').read_text())

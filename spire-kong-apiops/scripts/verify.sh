@@ -30,7 +30,7 @@ PY
 : > "$evidence/http-tests.txt"
 count=0
 while IFS= read -r -d '' name && IFS= read -r -d '' method && IFS= read -r -d '' url && IFS= read -r -d '' auth && IFS= read -r -d '' expected && IFS= read -r -d '' contains; do
-  actual=$(curl --silent --show-error --connect-timeout 5 --max-time 20 --request "$method" --header "@$scratch/$auth-header" --output "$scratch/body" --write-out '%{http_code}' "$url")
+  actual=$(curl --disable --proto "=https" --silent --show-error --connect-timeout 5 --max-time 20 --request "$method" --header "@$scratch/$auth-header" --output "$scratch/body" --write-out '%{http_code}' "$url")
   printf '%s: actual=%s expected=%s\n' "$name" "$actual" "$expected" >> "$evidence/http-tests.txt"
   [[ "$actual" == "$expected" ]] || { echo "HTTP test failed: $name" >&2; exit 1; }
   if [[ -n "$contains" ]]; then grep -Fq -- "$contains" "$scratch/body" || { echo "Body assertion failed: $name" >&2; exit 1; }; fi

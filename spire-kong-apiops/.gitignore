@@ -7,3 +7,6 @@ evidence/
 backups/
 .env
 .DS_Store
+# Generated distribution archives belong outside the source repository.
+*.zip
+*.zip.sha256

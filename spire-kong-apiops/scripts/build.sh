@@ -21,7 +21,7 @@ while IFS= read -r -d '' key && IFS= read -r -d '' value; do export "$key=$value
 # Derived from the API contract, never entered separately in environment values.
 DECK_OPENAPI_SPEC=$("$PYTHON" -c 'import json,pathlib,sys; print(json.dumps(pathlib.Path(sys.argv[1]).read_text()))' "apis/$api/openapi.yaml")
 export DECK_OPENAPI_SPEC
-deck file render --config "$ROOT/config/deck.yaml" --populate-env-vars "apis/$api/kong.yaml" -o "$output/state.yaml"
+deck file render --config "$ROOT/pipelines/deck.yaml" --populate-env-vars "apis/$api/kong.yaml" -o "$output/state.yaml"
 "$PYTHON" scripts/validate.py scope "$api" "$output/state.yaml"
-deck file validate --config "$ROOT/config/deck.yaml" "$output/state.yaml"
+deck file validate --config "$ROOT/pipelines/deck.yaml" "$output/state.yaml"
 "$PYTHON" scripts/validate.py state "$api" "$environment" "$output/state.yaml" --draft

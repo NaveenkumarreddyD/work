@@ -22,6 +22,6 @@ class NativeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             r=subprocess.run(['bash',str(ROOT/'scripts/build.sh'),'documents','dev',d],capture_output=True,text=True)
             self.assertEqual(r.returncode,0,r.stderr)
-            r=subprocess.run(['deck','file','validate','--config',str(ROOT/'config/deck.yaml'),str(Path(d)/'state.yaml')],capture_output=True,text=True)
+            r=subprocess.run(['deck','file','validate','--config',str(ROOT/'pipelines/deck.yaml'),str(Path(d)/'state.yaml')],capture_output=True,text=True)
             self.assertEqual(r.returncode,0,r.stderr)
             self.assertEqual(r.stdout,'')

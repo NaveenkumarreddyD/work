@@ -66,7 +66,7 @@ def require_enabled(target, values):
 
 def target_path(root, env):
     if env not in ENVS: raise ValueError('invalid environment')
-    return root/'konnect'/('prod' if env in ('preprod','prod') else 'nonprod')/env/'target.yaml'
+    return root/'environments'/('prod' if env in ('preprod','prod') else 'nonprod')/env/'target.yaml'
 
 def settings(root, api, env, strict=False):
     identifier(api)

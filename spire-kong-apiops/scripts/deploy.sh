@@ -41,7 +41,7 @@ finish() {
 }
 trap finish EXIT
 state="$evidence/state.yaml"
-common=(--config "$ROOT/config/deck.yaml" --konnect-control-plane-name "$EXPECTED_CP" --konnect-addr "$EXPECTED_ADDR")
+common=(--config "$ROOT/pipelines/deck.yaml" --konnect-control-plane-name "$EXPECTED_CP" --konnect-addr "$EXPECTED_ADDR")
 # Prevent a user/home .deck.yaml or self-managed target override from changing the target.
 export DECK_KONG_ADDR=http://localhost:8001
 unset DECK_KONG_ADMIN_TOKEN DECK_KONG_COOKIE_JAR_PATH DECK_HEADERS DECK_TLS_SKIP_VERIFY || true

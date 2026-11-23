@@ -82,6 +82,10 @@ node(targetEnv in ['preprod','prod'] ? 'kong-prod' : 'kong-nonprod') {
         def lockKey="kong-${target.konnect_addr}-${cp}".replaceAll('[^A-Za-z0-9_.-]','_')
         lock(resource:lockKey) {
           withCredentials([string(credentialsId:target.token_credential,variable:'DECK_KONNECT_TOKEN')]) {
+              def approvedGateway=target.smoke_gateways?.get(params.API)
+              if (!approvedGateway || manifest.environments[targetEnv].gateway_url != approvedGateway) {
+                error('Smoke destination must match the approved URL for this API and environment')
+              }
               stage('Online schema validation and plan') { sh 'bash scripts/deploy.sh plan "$PACKAGE_DIR" "$API" "$TARGET_ENV" "$EVIDENCE_DIR"' }
               if (!automatic) {
                 stage('Approve reviewed diff') {
