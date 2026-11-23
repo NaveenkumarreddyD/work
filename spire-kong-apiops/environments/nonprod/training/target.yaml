@@ -2,4 +2,3 @@
 enabled: false
 konnect_addr: https://REPLACE_KONNECT_REGION.example.invalid
 control_plane: REPLACE_TRAINING_CP
-apis: [invoices, payments, refunds]

@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ENVS = ('dev', 'uat', 'training', 'preprod', 'prod')
 NAME = re.compile(r'[a-z][a-z0-9-]{2,62}\Z')
 VARIABLES = {'DECK_REDIS_HOST','DECK_REDIS_PORT','DECK_REDIS_PASSWORD_REF','DECK_CACHE_TOKENS_SALT','DECK_BACKEND_HOST','DECK_BACKEND_PORT','DECK_OIDC_ISSUER','DECK_OIDC_AUDIENCE','DECK_REQUIRED_ROLE','DECK_RATE_MINUTE','DECK_RATE_POLICY'}
-TARGET_KEYS = {'enabled','konnect_addr','control_plane','apis'}
+TARGET_KEYS = {'enabled','konnect_addr','control_plane'}
 VALUE_KEYS = {'enabled','gateway_url','variables'}
 
 class UniqueLoader(yaml.SafeLoader): pass
@@ -79,9 +79,6 @@ def read_target(root, env):
     cp = target['control_plane']
     if not isinstance(cp,str) or not cp.strip() or any(c in cp for c in ('\n','\r','\0')):
         raise ValueError('invalid control plane name')
-    members = target['apis']
-    if not isinstance(members,list) or any(not isinstance(name,str) or not NAME.fullmatch(name) for name in members) or len(set(members)) != len(members):
-        raise ValueError('invalid control plane API list')
     return target
 
 def api_directory(root, api):
@@ -107,8 +104,6 @@ def settings(root, api, env, strict=False):
     values = load(values_path(root,env,folder.parent.name,api))
     check_keys(values,VALUE_KEYS,'environment API')
     if type(values['enabled']) is not bool: raise ValueError('enabled must be boolean')
-    if values['enabled'] and api not in target['apis']:
-        raise ValueError(f'{api} must be listed on its {env} control plane before enabling the overlay')
     https(values['gateway_url'],'gateway_url')
     variables=values['variables']; check_keys(variables,VARIABLES,'variables')
     integer(variables['DECK_BACKEND_PORT'],'backend port',1,65535)
@@ -295,9 +290,7 @@ def main():
             print(f'Policy and contract checks passed: {a.api}/{a.env}')
         else:
             for env in ENVS:
-                inventory = read_target(a.root,env)
-                for api in inventory['apis']:
-                    api_directory(a.root,api)
+                read_target(a.root,env)
             seen_names=set(); seen_paths=set()
             for folder in sorted((a.root/'apis').glob('*/*')):
                 if not folder.is_dir(): continue

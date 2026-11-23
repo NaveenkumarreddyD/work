@@ -7,7 +7,7 @@ This repository delivers API changes to existing Kong Konnect control planes. De
 | Owner | Responsibilities |
 |---|---|
 | API developers | Maintain the Service, Routes, API-specific plugins, OpenAPI contract and smoke tests in `apis/<business-domain>/<api-name>/`. Update backend settings under `environments/` when a destination changes. |
-| APIOps maintainers | Register APIs against existing control planes in `environments/`. Maintain the Jenkins workflows for scoped deployments, approvals, rollback and drift checks. |
+| APIOps maintainers | Configure environment targets for existing control planes in `environments/`. Maintain the Jenkins workflows for scoped deployments, approvals, rollback and drift checks. |
 | Platform team | Provision and operate control planes, gateways and shared infrastructure using Terraform in a separate repository. Own shared gateway policies and supply the approved connection details for each environment. |
 
 ## What do I update?
@@ -42,16 +42,16 @@ python3 -m pip install --require-hashes -r requirements.lock
 
 1. Create a branch and run `python3 scripts/new_api.py` in your terminal. Answer the questions about the API name, public path and team. The starter creates the files with deployment disabled.
 2. Open the new API folder. Review the generated Route, contract and smoke checks. Fill in the DEV overlay with the values supplied by your backend and IAM teams. Store only secret references in Git.
-3. Ask the APIOps maintainer to list the API in the DEV target file (`environments/nonprod/dev/target.yaml`) and confirm the target, register the approved smoke-test gateway URL and configure the API's Jenkins smoke credential. Enable the DEV overlay when ready.
+3. Ask the APIOps maintainer to confirm the DEV destination is enabled, record the approved smoke-test gateway URL and configure the API's Jenkins smoke credential. Enable the DEV overlay when ready.
 4. Open a GitLab merge request. Jenkins checks all environments. After merge, look for the successful DEV deployment and its receipt.
 
 ## When to update target.yaml
 
-Each environment has one `target.yaml` shared by its APIs. For example, the [UAT target](environments/nonprod/uat/target.yaml) identifies the existing Konnect control plane Jenkins will use and lists the APIs registered for UAT.
+Each environment has one `target.yaml` shared by its APIs. For example, the [UAT target](environments/nonprod/uat/target.yaml) identifies the existing Konnect control plane Jenkins will use. Its `enabled` flag applies to the whole destination. Each API has one enablement setting per environment in its own settings file.
 
 | What changed? | What to update |
 |---|---|
-| An API is being onboarded to UAT. | Ask an APIOps maintainer to add its name to the UAT target’s `apis` list before enabling its UAT settings. |
+| An API is being onboarded to UAT. | Review its UAT settings and set `enabled: true` in that API’s UAT file when ready. For Payments, use [payments.yaml](environments/nonprod/uat/apis/billing/payments.yaml). |
 | The platform team changed the UAT destination. | The maintainer updates the UAT target and coordinates the matching change to Jenkins’ trusted settings. See the [setup guide](docs/SETUP.md). |
 | Only the Payments UAT backend changed. | Update the [Payments UAT settings](environments/nonprod/uat/apis/billing/payments.yaml). |
 | A Payments route changed. | Update the route, contract and smoke tests together in the [Payments API folder](apis/billing/payments). |
@@ -132,7 +132,7 @@ Prepare and review the settings for each intended destination before tagging. If
 
 | Folder | What it contains |
 |---|---|
-| `environments/` | Environment folders with per-API settings and control-plane registrations |
+| `environments/` | Environment folders with per-API settings and shared deployment targets |
 | `pipelines/` | Jenkins jobs, trusted destinations, credential IDs and approval groups |
 | `scripts/` | API starter, validators and deployment commands |
 | `tests/` | Tests for the delivery process |

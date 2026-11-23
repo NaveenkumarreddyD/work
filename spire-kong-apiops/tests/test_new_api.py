@@ -38,18 +38,16 @@ class NewApiTests(unittest.TestCase):
             v=yaml.safe_load((self.root/f'environments/{group}/{env}/apis/crm/customer-api.yaml').read_text())
             self.assertIs(v['enabled'],False);salts.append(v['variables']['DECK_CACHE_TOKENS_SALT'])
         self.assertEqual(len(set(salts)),5)
-    def test_enabled_api_requires_control_plane_registration(self):
+    def test_api_overlay_enables_api_while_disabled_target_blocks_deployment(self):
         from validate import settings
         self.create()
         overlay = self.root/'environments/nonprod/dev/apis/crm/customer-api.yaml'
         overlay.write_text(overlay.read_text().replace('enabled: false','enabled: true'))
-        with self.assertRaisesRegex(ValueError,'must be listed'):
-            settings(self.root,'customer-api','dev')
-        inventory = self.root/'environments/nonprod/dev/target.yaml'
-        target = yaml.safe_load(inventory.read_text())
-        target['apis'].append('customer-api')
-        inventory.write_text(yaml.safe_dump(target))
-        settings(self.root,'customer-api','dev')
+        _, target, values = settings(self.root,'customer-api','dev')
+        self.assertTrue(values['enabled'])
+        self.assertFalse(target['enabled'])
+        with self.assertRaisesRegex(ValueError,'deployment disabled'):
+            settings(self.root,'customer-api','dev',strict=True)
 
     def test_same_api_name_in_another_domain_is_rejected(self):
         self.create()
