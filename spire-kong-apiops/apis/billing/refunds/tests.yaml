@@ -1,0 +1,20 @@
+# Replace the success body assertion with a real stable response property.
+tests:
+- name: authenticated-read
+  method: GET
+  path: /billing/refunds/v1
+  auth: valid
+  expected_status: 200
+  body_contains: refunds
+- name: missing-token-rejected
+  method: GET
+  path: /billing/refunds/v1
+  auth: none
+  expected_status: 401
+  body_contains: ''
+- name: invalid-token-rejected
+  method: GET
+  path: /billing/refunds/v1
+  auth: invalid
+  expected_status: 401
+  body_contains: ''

@@ -2,7 +2,7 @@
 # A file alone does not enforce approvals. These are placeholders, not existing teams.
 [APIOps maintainers]
 * @REPLACE_APIOPS_GROUP
-/konnect/ @REPLACE_APIOPS_GROUP
+/environments/ @REPLACE_APIOPS_GROUP
 /pipelines/ @REPLACE_APIOPS_GROUP
 /scripts/ @REPLACE_APIOPS_GROUP
 /tests/ @REPLACE_APIOPS_GROUP
@@ -11,4 +11,4 @@
 /CODEOWNERS @REPLACE_APIOPS_GROUP
 [API owners]
 /apis/ @REPLACE_INTEGRATIONS_GROUP
-/konnect/*/*/apis/ @REPLACE_INTEGRATIONS_GROUP
+/environments/*/*/apis/ @REPLACE_INTEGRATIONS_GROUP

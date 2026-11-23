@@ -66,7 +66,7 @@ def require_enabled(target, values):
 
 def environment_dir(root, env):
     if env not in ENVS: raise ValueError('invalid environment')
-    return root/'konnect'/('prod' if env in ('preprod','prod') else 'nonprod')/env
+    return root/'environments'/('prod' if env in ('preprod','prod') else 'nonprod')/env
 
 def target_path(root, env, tier):
     return environment_dir(root,env)/f'{tier}.yaml'
@@ -165,7 +165,10 @@ def validate_state(state, api, tier, env):
         if route.get('plugins'): raise ValueError('Route-level plugins require reviewed extension; cannot bypass Service baseline')
     plugins=service.get('plugins',[])
     names=[p.get('name') for p in plugins]
-    approved=set(load(ROOT/'governance/plugins.yaml')['approved_plugins'])
+    approved = {
+        'correlation-id', 'cors', 'ip-restriction', 'oas-validation',
+        'openid-connect', 'rate-limiting', 'request-size-limiting',
+    }
     if set(names)-approved: raise ValueError('plugin not in approved baseline')
     if any('https' not in p.get('protocols',['http','https']) for p in plugins): raise ValueError('Service plugins must cover HTTPS')
     if any(any(k in p for k in ('consumer','consumer_group','route','service')) for p in plugins): raise ValueError('baseline plugin scope cannot narrow its parent Service')

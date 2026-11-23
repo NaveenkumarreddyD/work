@@ -6,21 +6,29 @@ This repository delivers API changes to existing Kong Konnect control planes. De
 
 | Owner | Responsibilities |
 |---|---|
-| API developers | Maintain the Service, Routes, API-specific plugins, OpenAPI contract, backend settings and smoke tests in `apis/<business-domain>/<api-name>/`. |
-| APIOps maintainers | Register APIs against existing control planes in `konnect/`. Maintain the Jenkins workflows for scoped deployments, approvals, rollback and drift checks. |
+| API developers | Maintain the Service, Routes, API-specific plugins, OpenAPI contract and smoke tests in `apis/<business-domain>/<api-name>/`. Update backend settings under `environments/` when a destination changes. |
+| APIOps maintainers | Register APIs against existing control planes in `environments/`. Maintain the Jenkins workflows for scoped deployments, approvals, rollback and drift checks. |
 | Platform team | Provision and operate control planes, gateways and shared infrastructure using Terraform in a separate repository. Own shared gateway policies and supply the approved connection details for each environment. |
 
-## Find the file to edit
+## What do I update?
 
-| What do you want to change? | File (inside your API folder unless a full path is shown) |
+| Task | Where to work |
 |---|---|
-| Public path, HTTP method, Service or API policy | `kong.yaml` |
-| What clients can request and expect back | `openapi.yaml` |
-| How Jenkins tests a request through the gateway | `tests.yaml` |
-| Backend or other settings for one environment | `konnect/nonprod/dev/apis/<domain>/<api>.yaml` for DEV |
-| Owner, team or gateway tier | `metadata.yaml` |
+| Add a Payments route | In `apis/billing/payments/`, update `kong.yaml` (route), `openapi.yaml` (contract) and `tests.yaml` (smoke checks) together. Every environment uses that route definition. |
+| Change only the Payments UAT backend | Edit `environments/nonprod/uat/apis/billing/payments.yaml`. If a new route also needs that backend, include both changes in the same merge request. |
+| Change the API owner or team | Edit `metadata.yaml` in the API folder. |
+| Add a new API | Run the starter once. It creates the API folder and disabled settings for all five environments. Follow the onboarding steps below to prepare DEV first. |
+| Promote an already configured API | Use Jenkins. Routine promotion requires **zero file edits**. |
 
-**Example: Billing → Invoices.** Billing is the business domain. Invoices is one API owned within that domain. A client calls `GET /billing/invoices/v1` to list invoices. To change the route, edit `apis/billing/invoices/kong.yaml`. To change only its DEV backend, edit `konnect/nonprod/dev/apis/billing/invoices.yaml`. The sample is disabled in every environment. [Explore the Invoices API](apis/billing/invoices)
+## Billing examples
+
+One business domain can own several APIs. Each row below is a separate folder, with its own Service, Routes, contract, smoke tests and ownership tag. All three samples are disabled in every environment.
+
+| API folder | Example request | What it returns |
+|---|---|---|
+| [Invoices](apis/billing/invoices) | `GET /billing/invoices/v1` | Invoices with an `invoiceId` |
+| [Payments](apis/billing/payments) | `GET /billing/payments/v1` | Payments with a `paymentId` |
+| [Refunds](apis/billing/refunds) | `GET /billing/refunds/v1` | Refunds with a `refundId` |
 
 ## Add an API
 
@@ -43,24 +51,27 @@ Edit the existing API folder. For a new path, add the Route to `kong.yaml`, desc
 
 ## Promote a release
 
-Before tagging, review the API’s settings in each intended destination. For Invoices, open the folder below and edit `apis/billing/invoices.yaml` inside it. The same folder holds the internal and external control-plane registrations.
+Prepare and review the settings for each intended destination before tagging. If a destination needs new settings after the tag is created, merge the change, verify it in DEV and create a new release tag.
 
-| Destination folder | Jenkins deploys after |
+| Destination | Trigger and requirements |
 |---|---|
-| [DEV](konnect/nonprod/dev) | A reviewed merge to main, when enabled |
-| [UAT](konnect/nonprod/uat) | Successful DEV run and one approval |
-| [TRAINING](konnect/nonprod/training) | Successful DEV run and one approval |
-| [PREPROD](konnect/prod/preprod) | Successful UAT run and two distinct approvers |
-| [PROD](konnect/prod/prod) | Successful PREPROD run and two distinct approvers |
+| [DEV](environments/nonprod/dev) | A reviewed merge to main, when enabled |
+| [UAT](environments/nonprod/uat) | Successful DEV run and one approval |
+| [TRAINING](environments/nonprod/training) | Successful DEV run and one approval |
+| [PREPROD](environments/prod/preprod) | Successful UAT run and two distinct approvers |
+| [PROD](environments/prod/prod) | Successful PREPROD run and two distinct approvers |
 
-Tag the commit that passed DEV and build the signed tag once. For each higher environment, run its Jenkins Deploy job with the API name, the same tag and package build number, the preceding successful deployment build number, and the change ticket. Jenkins shows the proposed changes and pauses for approval before applying them. [Promotion and rollback instructions](docs/OPERATIONS.md)
+1. After DEV succeeds, create a signed release tag on the exact commit recorded by that deployment. Run **Kong/Build** once with the tag as `RELEASE_TAG`. Save the package build number.
+2. When ready, **manually start** the destination job, such as `Deploy-uat`. Enter the API name, release tag, package build number, change ticket and successful deployment build number from the preceding environment in the table.
+3. Review the proposed changes in Jenkins. After the required approvals, Jenkins applies them and runs smoke tests. Save the successful build number for the next promotion. Each higher environment waits for a separate manual start, using the same tag and package build.
+
+[Tagging commands, promotion and rollback instructions](docs/OPERATIONS.md)
 
 ## Maintainer folders
 
 | Folder | What it contains |
 |---|---|
-| `konnect/` | Environment folders with per-API settings and control-plane registrations |
-| `governance/` | Approved API plugin names enforced during validation |
+| `environments/` | Environment folders with per-API settings and control-plane registrations |
 | `pipelines/` | Jenkins jobs, trusted destinations, credential IDs and approval groups |
 | `scripts/` | API starter, validators and deployment commands |
 | `tests/` | Tests for the delivery process |
@@ -71,6 +82,6 @@ Use Python 3.11+, decK 1.70.0 and Gitleaks 8.30.1. Run `bash scripts/check.sh` a
 
 ## How the folders map to Kong’s proposal
 
-`konnect/nonprod/` contains dev, uat and training. `konnect/prod/` contains preprod and prod. Each environment contains `internal.yaml` and `external.yaml`. The API’s tier in `metadata.yaml` selects the file. A maintainer lists the API under `apis` before its environment overlay can be enabled. Registration alone does not deploy it.
+`environments/nonprod/` contains dev, uat and training. `environments/prod/` contains preprod and prod. Each environment contains `internal.yaml` and `external.yaml`. The API’s tier in `metadata.yaml` selects the file. A maintainer lists the API under `apis` before its environment overlay can be enabled. Registration alone does not deploy it.
 
 As in [KongAir](https://github.com/Kong/KongAir/tree/main), each team keeps its API contract next to the configuration it owns. This repository uses GitLab for review, Jenkins for delivery and decK for Gateway Services, Routes and plugins. The separate platform repository owns control-plane provisioning and shared policies.

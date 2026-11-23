@@ -1,0 +1,80 @@
+# EDIT THIS FILE: native Kong configuration, not generated deployment output.
+_format_version: '3.0'
+# Management boundary: never reuse another API's owner tag.
+_info:
+  select_tags:
+  - owner-payments
+# Service = destination backend. Variables come from the target environment folder under environments/.
+services:
+- name: payments-service
+  protocol: https
+  tls_verify: true
+  host: ${{ env "DECK_BACKEND_HOST" }}
+  port: ${{ env "DECK_BACKEND_PORT" }}
+  connect_timeout: 5000
+  read_timeout: 30000
+  write_timeout: 30000
+  retries: 0
+  tags:
+  - owner-payments
+  - team-integrations
+  - domain-billing
+  - data-internal
+  # Route = public request path and HTTP method. Update openapi.yaml too.
+  routes:
+  - name: payments-v1
+    paths:
+    - /billing/payments/v1
+    methods:
+    - GET
+    protocols:
+    - https
+    strip_path: false
+    preserve_host: false
+    tags:
+    - owner-payments
+  # Policies apply to every Route on this Service. Review docs/OPERATIONS.md.
+  plugins:
+  - name: openid-connect
+    tags:
+    - owner-payments
+    config:
+      issuer: ${{ env "DECK_OIDC_ISSUER" }}
+      auth_methods:
+      - bearer
+      bearer_token_param_type:
+      - header
+      ssl_verify: true
+      cache_tokens_salt: ${{ env "DECK_CACHE_TOKENS_SALT" }}
+      audience_required:
+      - ${{ env "DECK_OIDC_AUDIENCE" }}
+      roles_claim:
+      - roles
+      roles_required:
+      - ${{ env "DECK_REQUIRED_ROLE" }}
+  - name: rate-limiting
+    tags:
+    - owner-payments
+    config:
+      minute: ${{ env "DECK_RATE_MINUTE" }}
+      policy: ${{ env "DECK_RATE_POLICY" }}
+      limit_by: service
+      redis:
+        host: ${{ env "DECK_REDIS_HOST" }}
+        port: ${{ env "DECK_REDIS_PORT" }}
+        ssl: true
+        ssl_verify: true
+        password: '${{ env "DECK_REDIS_PASSWORD_REF" }}'
+  - name: request-size-limiting
+    tags:
+    - owner-payments
+    config:
+      allowed_payload_size: 1
+      size_unit: megabytes
+  - name: correlation-id
+    tags:
+    - owner-payments
+    config:
+      header_name: X-Correlation-ID
+      generator: uuid
+      echo_downstream: true

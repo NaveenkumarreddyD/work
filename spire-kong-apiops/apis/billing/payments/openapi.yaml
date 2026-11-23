@@ -1,0 +1,40 @@
+openapi: 3.0.3
+info:
+  title: Payments API (disabled example)
+  version: 1.0.0
+paths:
+  /billing/payments/v1:
+    get:
+      summary: List payments
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of payments visible to the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [payments]
+                properties:
+                  payments:
+                    type: array
+                    items:
+                      type: object
+                      required: [paymentId]
+                      properties:
+                        paymentId:
+                          type: string
+              example:
+                payments:
+                  - paymentId: PAY-1001
+        '401':
+          description: Authentication rejected
+        '403':
+          description: Permission rejected
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

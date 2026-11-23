@@ -1,0 +1,40 @@
+openapi: 3.0.3
+info:
+  title: Refunds API (disabled example)
+  version: 1.0.0
+paths:
+  /billing/refunds/v1:
+    get:
+      summary: List refunds
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of refunds visible to the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [refunds]
+                properties:
+                  refunds:
+                    type: array
+                    items:
+                      type: object
+                      required: [refundId]
+                      properties:
+                        refundId:
+                          type: string
+              example:
+                refunds:
+                  - refundId: REF-1001
+        '401':
+          description: Authentication rejected
+        '403':
+          description: Permission rejected
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

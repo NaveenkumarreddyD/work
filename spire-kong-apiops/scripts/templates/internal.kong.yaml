@@ -9,7 +9,7 @@ services:
 - name: invoices-service
   protocol: https
   tls_verify: true
-  # Environment references are filled from the target environment folder under konnect/.
+  # Environment references are filled from the target environment folder under environments/.
   host: ${{ env "DECK_BACKEND_HOST" }}
   port: ${{ env "DECK_BACKEND_PORT" }}
   # Milliseconds. Retries are explicit because retrying writes can duplicate work.

@@ -35,18 +35,20 @@ class NewApiTests(unittest.TestCase):
         salts=[]
         for env in ('dev','uat','training','preprod','prod'):
             group='prod' if env in ('preprod','prod') else 'nonprod'
-            v=yaml.safe_load((self.root/f'konnect/{group}/{env}/apis/crm/customer-api.yaml').read_text())
+            v=yaml.safe_load((self.root/f'environments/{group}/{env}/apis/crm/customer-api.yaml').read_text())
             self.assertIs(v['enabled'],False);salts.append(v['variables']['DECK_CACHE_TOKENS_SALT'])
         self.assertEqual(len(set(salts)),5)
     def test_enabled_api_requires_control_plane_registration(self):
         from validate import settings
         self.create()
-        overlay = self.root/'konnect/nonprod/dev/apis/crm/customer-api.yaml'
+        overlay = self.root/'environments/nonprod/dev/apis/crm/customer-api.yaml'
         overlay.write_text(overlay.read_text().replace('enabled: false','enabled: true'))
         with self.assertRaisesRegex(ValueError,'must be listed'):
             settings(self.root,'customer-api','dev')
-        inventory = self.root/'konnect/nonprod/dev/internal.yaml'
-        inventory.write_text(inventory.read_text().replace('[invoices]','[invoices, customer-api]'))
+        inventory = self.root/'environments/nonprod/dev/internal.yaml'
+        target = yaml.safe_load(inventory.read_text())
+        target['apis'].append('customer-api')
+        inventory.write_text(yaml.safe_dump(target))
         settings(self.root,'customer-api','dev')
 
     def test_same_api_name_in_another_domain_is_rejected(self):
@@ -60,7 +62,7 @@ class NewApiTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'exists'):self.create()
         self.assertEqual(p.read_text(),'keep my changes')
     def test_orphan_environment_file_blocks_all_creation(self):
-        p=self.root/'konnect/prod/prod/apis/crm/customer-api.yaml';p.parent.mkdir(parents=True);p.write_text('existing')
+        p=self.root/'environments/prod/prod/apis/crm/customer-api.yaml';p.parent.mkdir(parents=True);p.write_text('existing')
         with self.assertRaisesRegex(ValueError,'exists'):self.create()
         self.assertEqual(p.read_text(),'existing')
     def test_unsafe_name_rejected_without_files(self):
@@ -70,12 +72,12 @@ class NewApiTests(unittest.TestCase):
         with self.assertRaises(ValueError):self.create(path='/customers')
         self.assertFalse((self.root/'apis/crm/customer-api').exists())
     def test_parent_symlink_rejected(self):
-        p=self.root/'konnect/nonprod/dev/apis/crm';external=self.root.parent/'outside';external.mkdir();p.symlink_to(external,target_is_directory=True)
+        p=self.root/'environments/nonprod/dev/apis/crm';external=self.root.parent/'outside';external.mkdir();p.symlink_to(external,target_is_directory=True)
         with self.assertRaisesRegex(ValueError,'exists|symlink'):self.create()
         self.assertEqual(list(external.iterdir()),[])
     def test_target_enablement_not_changed(self):
-        before=(self.root/'konnect/nonprod/dev/internal.yaml').read_bytes();self.create()
-        self.assertEqual((self.root/'konnect/nonprod/dev/internal.yaml').read_bytes(),before)
+        before=(self.root/'environments/nonprod/dev/internal.yaml').read_bytes();self.create()
+        self.assertEqual((self.root/'environments/nonprod/dev/internal.yaml').read_bytes(),before)
     def test_external_spec_and_test_paths_agree(self):
         self.create(name='partner-api',tier='external')
         spec=yaml.safe_load((self.root/'apis/crm/partner-api/openapi.yaml').read_text())
@@ -108,5 +110,5 @@ class NewApiTests(unittest.TestCase):
         with patch.object(self.n,'ROOT',self.root), patch.object(sys,'argv',['new_api.py']), patch.object(sys.stdin,'isatty',return_value=True), patch('builtins.input',side_effect=answers), contextlib.redirect_stdout(io.StringIO()):
             self.n.main()
         self.assertTrue((self.root/'apis/crm/guided-api/kong.yaml').is_file())
-        values=yaml.safe_load((self.root/'konnect/nonprod/dev/apis/crm/guided-api.yaml').read_text())
+        values=yaml.safe_load((self.root/'environments/nonprod/dev/apis/crm/guided-api.yaml').read_text())
         self.assertIs(values['enabled'],False)

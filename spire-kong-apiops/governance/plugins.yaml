@@ -1,8 +1,0 @@
-approved_plugins:
-  - correlation-id
-  - cors
-  - ip-restriction
-  - oas-validation
-  - openid-connect
-  - rate-limiting
-  - request-size-limiting

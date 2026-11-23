@@ -67,7 +67,7 @@ def create_api(root, *, name, path, owner, team='integrations', tier='internal',
                     for label,auth,status in [('authenticated-read','valid',200),('missing-token-rejected','none',401),('invalid-token-rejected','invalid',401)]]}
     native_text=dump(native)
     native_text=native_text.replace('_info:\n','# Management boundary: never reuse another API\'s owner tag.\n_info:\n',1)
-    native_text=native_text.replace('services:\n','# Service = destination backend. Variables come from the target environment folder under konnect/.\nservices:\n',1)
+    native_text=native_text.replace('services:\n','# Service = destination backend. Variables come from the target environment folder under environments/.\nservices:\n',1)
     native_text=native_text.replace('  routes:\n','  # Route = public request path and HTTP method. Update openapi.yaml too.\n  routes:\n',1)
     native_text=native_text.replace('  plugins:\n','  # Policies apply to every Route on this Service. Review docs/OPERATIONS.md.\n  plugins:\n',1)
     content={destinations[0]:'# Ownership and classification; no passwords or tokens.\n'+dump(metadata),

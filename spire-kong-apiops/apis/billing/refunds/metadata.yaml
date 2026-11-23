@@ -1,0 +1,8 @@
+# Who owns/supports this API? Keep name equal to its folder name.
+# tier selects the internal or external Control Plane; it does not create a gateway.
+name: refunds
+owner: REPLACE_TEAM_EMAIL
+team: integrations
+domain: billing
+data_class: internal
+tier: internal
