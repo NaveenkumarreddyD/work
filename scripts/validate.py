@@ -6,7 +6,7 @@ import json
 import re
 import sys
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -208,6 +208,26 @@ def validate_state(state, api, tier, env):
             if ipaddress.ip_network(n,strict=False).prefixlen==0: raise ValueError('external allow list cannot allow the entire Internet')
     if placeholder(state): raise ValueError('rendered state contains placeholder')
 
+def path_methods(spec, item):
+    methods = {'get', 'head', 'post', 'put', 'patch', 'delete', 'options', 'trace'}
+    result = set()
+    visited = set()
+    while isinstance(item, dict):
+        result.update(methods.intersection(item))
+        if '$ref' not in item:
+            return result
+        ref = item['$ref']
+        if not isinstance(ref, str) or not ref.startswith('#/') or ref in visited:
+            raise ValueError(f'invalid or circular local OpenAPI path reference: {ref}')
+        visited.add(ref)
+        item = spec
+        for token in unquote(ref[2:]).split('/'):
+            key = token.replace('~1', '/').replace('~0', '~')
+            if not isinstance(item, dict) or key not in item:
+                raise ValueError(f'unknown OpenAPI path reference: {ref}')
+            item = item[key]
+    raise ValueError('expected an OpenAPI Path Item Object')
+
 def contract(state,spec,tests):
     for service in state['services']:
         for plugin in service.get('plugins',[]):
@@ -215,15 +235,26 @@ def contract(state,spec,tests):
                 raise ValueError('embedded OpenAPI differs from openapi.yaml')
     paths=spec.get('paths',{})
     if not str(spec.get('openapi','')).startswith('3.'): raise ValueError('OpenAPI 3 required')
-    operations=set()
-    for service in state['services']:
-        for route in service['routes']:
-            for path in route['paths']:
-                for method in route['methods']:
-                    if method.lower() not in paths.get(path,{}): raise ValueError(f'OpenAPI operation missing: {method} {path}')
-                    operations.add((method,path))
+    documented = set()
+    for path, item in paths.items():
+        if not path.startswith('/'):  # OpenAPI allows extensions on the Paths Object.
+            continue
+        documented.update((method.upper(), path) for method in path_methods(spec,item))
+    operations = {
+        (method, path)
+        for service in state['services']
+        for route in service['routes']
+        for path in route['paths']
+        for method in route['methods']
+    }
+    for label, missing in [('OpenAPI operation', operations - documented),
+                           ('Kong route', documented - operations)]:
+        if missing:
+            details = ', '.join(f'{method} {path}' for method, path in sorted(missing))
+            raise ValueError(f'{label} missing: {details}')
     if not isinstance(tests,list) or not tests: raise ValueError('API tests required')
     modes=set()
+    untested = {operation for operation in operations if operation[0] in ('GET','HEAD')}
     for t in tests:
         check_keys(t,{'name','method','path','auth','expected_status','body_contains'},'test')
         if t['method'] not in ('GET','HEAD'): raise ValueError('smoke tests must be read-only GET or HEAD')
@@ -234,8 +265,13 @@ def contract(state,spec,tests):
         if not isinstance(t['body_contains'],str): raise ValueError('body_contains must be string')
         if t['auth']=='valid' and not 200<=t['expected_status']<300: raise ValueError('positive test must expect 2xx')
         if t['auth']!='valid' and t['expected_status'] not in (401,403): raise ValueError('negative auth test must expect rejection')
+        if t['auth']=='valid':
+            untested.discard((t['method'],t['path']))
         modes.add(t['auth'])
     if modes!={'valid','none','invalid'}: raise ValueError('tests must include valid, missing and invalid credentials')
+    if untested:
+        details = ', '.join(f'{method} {path}' for method, path in sorted(untested))
+        raise ValueError(f'successful smoke test missing: {details}')
 
 def validate_openapi(spec):
     # Resolve internal document references only; validation must not read local files or fetch URLs.

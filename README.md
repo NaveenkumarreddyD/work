@@ -72,6 +72,8 @@ Create `feature/payments-summary` from the latest `main`. Make these three edits
 | [openapi.yaml](apis/billing/payments/openapi.yaml) | Add a GET operation for the same path. Describe the successful response with `totalPayments`, retain bearer authentication, and document 401 and 403. For this compatible addition, update the sample contract version from `1.0.0` to `1.1.0`. |
 | [tests.yaml](apis/billing/payments/tests.yaml) | Keep the existing tests and copy the three checks for the new path. Give each copy a unique name. With valid credentials expect 200 and set `body_contains: totalPayments`. With missing or invalid credentials expect 401. |
 
+Every documented method and path must have an explicit Kong route, and every Kong route must appear in OpenAPI. Each GET and HEAD operation needs its own valid-credential smoke check expecting a 2xx response. Use an empty `body_contains` for HEAD.
+
 ### 2. Validate the change and test in DEV
 
 From the directory containing this README, run the local checks with the project tools installed:

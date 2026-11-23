@@ -55,7 +55,7 @@ class AutomaticDevTests(DeployTests):
 class EnabledValidationTests(unittest.TestCase):
     def test_enabled_placeholder_cannot_pass_draft_build(self):
         with tempfile.TemporaryDirectory() as d:
-            p=Path(d)/'repo';shutil.copytree(ROOT,p,ignore=shutil.ignore_patterns('.venv','build','evidence','__pycache__'))
+            p=Path(d)/'repo';shutil.copytree(ROOT,p,ignore=shutil.ignore_patterns('.git','.venv','build','evidence','__pycache__'))
             for f in ['environments/nonprod/dev/target.yaml','environments/nonprod/dev/apis/billing/invoices.yaml']:
                 q=p/f;q.write_text(q.read_text().replace('enabled: false','enabled: true'))
             import subprocess
