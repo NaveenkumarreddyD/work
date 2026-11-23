@@ -11,4 +11,4 @@ class ContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'local'):
             v.validate_openapi({'openapi':'3.0.3','info':{'title':'a','version':'1'},'paths':{},'components':{'schemas':{'A':{'$ref':'https://outside.example.invalid/secret'}}}})
     def test_valid_contract_accepted(self):
-        v.validate_openapi(v.load(ROOT/'apis/documents/openapi.yaml'))
+        v.validate_openapi(v.load(ROOT/'apis/content/documents/openapi.yaml'))

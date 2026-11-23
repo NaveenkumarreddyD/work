@@ -12,6 +12,7 @@ api=$1; environment=$2; output=$3
 # Require explicit decK 1.70.0; no silent tool drift.
 deck version | grep -Eq 'v1\.70\.0([[:space:]]|$)' || { echo 'Install pinned decK 1.70.0' >&2; exit 2; }
 mkdir -p "$output"
+api_dir=$("$PYTHON" scripts/validate.py directory "$api")
 variables=$(mktemp)
 trap 'rm -f "$variables"' EXIT
 "$PYTHON" scripts/validate.py env "$api" "$environment" > "$variables"
@@ -19,9 +20,9 @@ trap 'rm -f "$variables"' EXIT
 while IFS= read -r -d '' key && IFS= read -r -d '' value; do export "$key=$value"; done < "$variables"
 # JSON quoting preserves the entire OpenAPI document as one YAML string, including newlines.
 # Derived from the API contract, never entered separately in environment values.
-DECK_OPENAPI_SPEC=$("$PYTHON" -c 'import json,pathlib,sys; print(json.dumps(pathlib.Path(sys.argv[1]).read_text()))' "apis/$api/openapi.yaml")
+DECK_OPENAPI_SPEC=$("$PYTHON" -c 'import json,pathlib,sys; print(json.dumps(pathlib.Path(sys.argv[1]).read_text()))' "$api_dir/openapi.yaml")
 export DECK_OPENAPI_SPEC
-deck file render --config "$ROOT/pipelines/deck.yaml" --populate-env-vars "apis/$api/kong.yaml" -o "$output/state.yaml"
+deck file render --config "$ROOT/pipelines/deck.yaml" --populate-env-vars "$api_dir/kong.yaml" -o "$output/state.yaml"
 "$PYTHON" scripts/validate.py scope "$api" "$output/state.yaml"
 deck file validate --config "$ROOT/pipelines/deck.yaml" "$output/state.yaml"
 "$PYTHON" scripts/validate.py state "$api" "$environment" "$output/state.yaml" --draft

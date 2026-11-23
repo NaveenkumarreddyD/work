@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ENVS = ('dev', 'uat', 'training', 'preprod', 'prod')
 NAME = re.compile(r'[a-z][a-z0-9-]{2,62}\Z')
 VARIABLES = {'DECK_REDIS_HOST','DECK_REDIS_PORT','DECK_REDIS_PASSWORD_REF','DECK_CACHE_TOKENS_SALT','DECK_BACKEND_HOST','DECK_BACKEND_PORT','DECK_OIDC_ISSUER','DECK_OIDC_AUDIENCE','DECK_REQUIRED_ROLE','DECK_RATE_MINUTE','DECK_RATE_POLICY'}
-TARGET_KEYS = {'enabled','konnect_addr','control_planes'}
+TARGET_KEYS = {'enabled','konnect_addr','control_plane','apis'}
 VALUE_KEYS = {'enabled','gateway_url','variables'}
 
 class UniqueLoader(yaml.SafeLoader): pass
@@ -64,25 +64,55 @@ def require_enabled(target, values):
     if target.get('enabled') is not True or values.get('enabled') is not True:
         raise ValueError('deployment disabled: enable both target and API after review')
 
-def target_path(root, env):
+def environment_dir(root, env):
     if env not in ENVS: raise ValueError('invalid environment')
-    return root/'environments'/('prod' if env in ('preprod','prod') else 'nonprod')/env/'target.yaml'
+    return root/'konnect'/('prod' if env in ('preprod','prod') else 'nonprod')/env
+
+def target_path(root, env, tier):
+    return environment_dir(root,env)/f'{tier}.yaml'
+
+def values_path(root, env, domain, api):
+    return environment_dir(root,env)/'apis'/domain/f'{api}.yaml'
+
+def read_target(root, env, tier):
+    target = load(target_path(root,env,tier))
+    check_keys(target,TARGET_KEYS,'target')
+    if type(target['enabled']) is not bool: raise ValueError('target enabled must be boolean')
+    https(target['konnect_addr'],'konnect_addr')
+    cp = target['control_plane']
+    if not isinstance(cp,str) or not cp.strip() or any(c in cp for c in ('\n','\r','\0')):
+        raise ValueError('invalid control plane name')
+    members = target['apis']
+    if not isinstance(members,list) or any(not isinstance(name,str) or not NAME.fullmatch(name) for name in members) or len(set(members)) != len(members):
+        raise ValueError('invalid control plane API list')
+    return target
+
+def api_directory(root, api):
+    identifier(api)
+    matches = list((root/'apis').glob(f'*/{api}'))
+    if len(matches) != 1:
+        raise ValueError(f'{api}: expected one API folder across all business domains')
+    folder = matches[0]
+    if folder.is_symlink() or folder.parent.is_symlink() or not folder.is_dir():
+        raise ValueError(f'invalid API folder: {folder}')
+    return folder
 
 def settings(root, api, env, strict=False):
     identifier(api)
     if env not in ENVS: raise ValueError('invalid environment')
-    meta = load(root/'apis'/api/'metadata.yaml')
+    folder = api_directory(root,api)
+    meta = load(folder/'metadata.yaml')
     check_keys(meta, {'name','owner','team','domain','data_class','tier'}, 'metadata')
     if meta['name'] != api or meta['tier'] not in ('internal','external'): raise ValueError('metadata name/tier mismatch')
     if any(not isinstance(v,str) or not v.strip() for v in meta.values()): raise ValueError('metadata values must be nonempty strings')
-    target = load(target_path(root,env))
-    values = load(root/'apis'/api/'overlays'/f'{env}.yaml')
-    check_keys(target,TARGET_KEYS,'target'); check_keys(values,VALUE_KEYS,'environment API')
-    if type(target['enabled']) is not bool or type(values['enabled']) is not bool: raise ValueError('enabled must be boolean')
-    check_keys(target['control_planes'], {'internal','external'}, 'control_planes')
-    for cp in target['control_planes'].values():
-        if not isinstance(cp,str) or not cp or '\n' in cp or '\0' in cp: raise ValueError('invalid control plane name')
-    https(target['konnect_addr'],'konnect_addr'); https(values['gateway_url'],'gateway_url')
+    target = read_target(root,env,meta["tier"])
+    if meta['domain'] != folder.parent.name: raise ValueError('metadata domain must match business domain folder')
+    values = load(values_path(root,env,folder.parent.name,api))
+    check_keys(values,VALUE_KEYS,'environment API')
+    if type(values['enabled']) is not bool: raise ValueError('enabled must be boolean')
+    if values['enabled'] and api not in target['apis']:
+        raise ValueError(f'{api} must be listed on its {env} control plane before enabling the overlay')
+    https(values['gateway_url'],'gateway_url')
     variables=values['variables']; check_keys(variables,VARIABLES,'variables')
     integer(variables['DECK_BACKEND_PORT'],'backend port',1,65535)
     integer(variables['DECK_RATE_MINUTE'],'minute quota',1,10000000)
@@ -135,7 +165,7 @@ def validate_state(state, api, tier, env):
         if route.get('plugins'): raise ValueError('Route-level plugins require reviewed extension; cannot bypass Service baseline')
     plugins=service.get('plugins',[])
     names=[p.get('name') for p in plugins]
-    approved={'openid-connect','rate-limiting','request-size-limiting','correlation-id','ip-restriction','oas-validation','cors'}
+    approved=set(load(ROOT/'governance/plugins.yaml')['approved_plugins'])
     if set(names)-approved: raise ValueError('plugin not in approved baseline')
     if any('https' not in p.get('protocols',['http','https']) for p in plugins): raise ValueError('Service plugins must cover HTTPS')
     if any(any(k in p for k in ('consumer','consumer_group','route','service')) for p in plugins): raise ValueError('baseline plugin scope cannot narrow its parent Service')
@@ -236,15 +266,18 @@ def main():
     s=sub.add_parser('state'); s.add_argument('api'); s.add_argument('env',choices=ENVS); s.add_argument('file',type=Path); s.add_argument('--draft',action='store_true')
     scope=sub.add_parser('scope'); scope.add_argument('api'); scope.add_argument('file',type=Path)
     sub.add_parser('source')
+    sub.add_parser('directory').add_argument('api')
     a=p.parse_args()
     try:
-        if a.command=='env':
+        if a.command=='directory':
+            print(api_directory(a.root,a.api))
+        elif a.command=='env':
             _,_,v=settings(a.root,a.api,a.env,a.strict)
             for k,val in v['variables'].items(): sys.stdout.buffer.write(k.encode()+b'\0'+str(val).encode()+b'\0')
         elif a.command=='scope':
             identifier(a.api)
             expected={'select_tags':[f'owner-{a.api}']}
-            native=load(a.root/'apis'/a.api/'kong.yaml')
+            native=load(api_directory(a.root,a.api)/'kong.yaml')
             if native.get('_info')!=expected: raise ValueError('source ownership scope mismatch')
             state=load(a.file); state['_info']=expected
             a.file.write_text(yaml.safe_dump(state,sort_keys=False))
@@ -258,11 +291,17 @@ def main():
                 text=json.dumps(state).replace('REPLACE_','DEMO_').replace('.invalid','.example.com')
                 state=json.loads(text)
             validate_state(state,a.api,m['tier'],check_env)
-            contract(state,load(a.root/'apis'/a.api/'openapi.yaml'),load(a.root/'apis'/a.api/'tests.yaml')['tests'])
+            contract(state,load(api_directory(a.root,a.api)/'openapi.yaml'),load(api_directory(a.root,a.api)/'tests.yaml')['tests'])
             print(f'Policy and contract checks passed: {a.api}/{a.env}')
         else:
+            for env in ENVS:
+                for tier in ('internal','external'):
+                    inventory = read_target(a.root,env,tier)
+                    for api in inventory['apis']:
+                        metadata = load(api_directory(a.root,api)/'metadata.yaml')
+                        if metadata['tier'] != tier: raise ValueError(f'{api}: wrong tier in {env} inventory')
             seen_names=set(); seen_paths=set()
-            for folder in sorted((a.root/'apis').iterdir()):
+            for folder in sorted((a.root/'apis').glob('*/*')):
                 if not folder.is_dir(): continue
                 for env in ENVS: settings(a.root,folder.name,env)
                 validate_openapi(load(folder/'openapi.yaml'))

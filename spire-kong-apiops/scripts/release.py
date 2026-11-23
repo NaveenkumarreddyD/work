@@ -10,7 +10,7 @@ import subprocess
 import sys
 from pathlib import Path, PurePosixPath
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from validate import ROOT, ENVS, contract, https, identifier, load, settings, validate_state
+from validate import ROOT, ENVS, api_directory, contract, https, identifier, load, settings, validate_state
 
 TAG=re.compile(r'kong-v\d+\.\d+\.\d+(?:-rc\d+)?\Z')
 
@@ -86,12 +86,12 @@ def make_manifest(root,package,api,tag):
         if os.environ.get('REQUIRE_SIGNED_TAG')=='true':subprocess.run(['git','verify-tag',tag],cwd=root,check=True)
     subprocess.run(['git','merge-base','--is-ancestor',commit,'refs/remotes/origin/main'],cwd=root,check=True)
     if git('status','--porcelain','--untracked-files=no'): raise ValueError('release build requires clean tracked files')
-    meta=load(root/'apis'/api/'metadata.yaml')
+    meta=load(api_directory(root,api)/'metadata.yaml')
     manifest={'schema':1,'api':api,'tier':meta['tier'],'tag':tag,'tag_object':tag_object,'commit':commit,'deck':'1.70.0','files':{},'environments':{}}
-    tests=load(root/'apis'/api/'tests.yaml')['tests']
+    tests=load(api_directory(root,api)/'tests.yaml')['tests']
     (package/'tests.json').write_text(json.dumps(tests,indent=2)+'\n')
     manifest['files']['tests.json']=sha(package/'tests.json')
-    spec=load(root/'apis'/api/'openapi.yaml')
+    spec=load(api_directory(root,api)/'openapi.yaml')
     for env in ENVS:
         m,t,v=settings(root,api,env)
         enabled=t['enabled'] and v['enabled']
@@ -101,7 +101,7 @@ def make_manifest(root,package,api,tag):
             validate_state(state,api,m['tier'],env);contract(state,spec,tests)
         relative=f'{env}/state.yaml'
         manifest['files'][relative]=sha(package/relative)
-        manifest['environments'][env]={'enabled':enabled,'control_plane':t['control_planes'][m['tier']],'konnect_addr':t['konnect_addr'],'gateway_url':v['gateway_url'],'state':relative}
+        manifest['environments'][env]={'enabled':enabled,'control_plane':t['control_plane'],'konnect_addr':t['konnect_addr'],'gateway_url':v['gateway_url'],'state':relative}
     (package/'manifest.json').write_text(json.dumps(manifest,sort_keys=True,indent=2)+'\n')
     print(f'Release package created: {tag}, {api}; disabled environments cannot deploy')
 

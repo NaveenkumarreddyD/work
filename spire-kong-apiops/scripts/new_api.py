@@ -6,7 +6,7 @@ import re
 import secrets
 import sys
 import yaml
-from validate import ENVS, ROOT, identifier, load
+from validate import ENVS, ROOT, identifier, load, values_path
 
 class ReadableYaml(yaml.SafeDumper):
     """Keep embedded OpenAPI readable and Vault substitutions quoted."""
@@ -31,9 +31,10 @@ def create_api(root, *, name, path, owner, team='integrations', tier='internal',
     if not re.fullmatch(r'[^@\s]+@[^@\s]+\.[^@\s]+',owner): raise ValueError('owner must be a team email address')
     if not re.fullmatch(r'[a-z][a-z0-9-]*',team): raise ValueError('team must use lower-case letters, numbers and hyphens')
     if not isinstance(body_contains,str) or '\0' in body_contains: raise ValueError('response text cannot contain NUL')
-    api_dir=root/'apis'/name
+    domain=path.split('/')[1]
+    api_dir=root/'apis'/domain/name
     destinations=[api_dir/f for f in ('metadata.yaml','kong.yaml','openapi.yaml','tests.yaml')]
-    destinations += [root/'apis'/name/'overlays'/f'{env}.yaml' for env in ENVS]
+    destinations += [values_path(root,env,domain,name) for env in ENVS]
     if api_dir.exists() or api_dir.is_symlink(): raise ValueError(f'API already exists: {name}; no files changed')
     for dest in destinations:
         if dest.exists() or dest.is_symlink(): raise ValueError(f'file already exists: {dest}; no files changed')
@@ -41,12 +42,13 @@ def create_api(root, *, name, path, owner, team='integrations', tier='internal',
             if parent.is_symlink(): raise ValueError(f'symlink rejected: {parent}')
             if parent==root: break
     # A newcomer should discover a duplicate public path before generating nine files.
-    for existing in (root/'apis').glob('*/metadata.yaml'):
+    for existing in (root/'apis').glob('*/*/metadata.yaml'):
+        if existing.parent.name == name: raise ValueError(f'API already exists: {name}')
         if load(existing)['tier']!=tier: continue
         for service in load(existing.with_name('kong.yaml')).get('services',[]):
             if any(path in route.get('paths',[]) for route in service.get('routes',[])):
                 raise ValueError(f'path already used by {existing.parent.name} on the {tier} tier')
-    domain=path.split('/')[1]; classification='internal' if tier=='internal' else 'confidential'
+    classification='internal' if tier=='internal' else 'confidential'
     tag=f'owner-{name}'
     metadata=dict(name=name,owner=owner,team=team,domain=domain,data_class=classification,tier=tier)
     spec={'openapi':'3.0.3','info':{'title':name.replace('-',' ').title(),'version':'1.0.0'},'paths':{path:{'get':{
@@ -65,7 +67,7 @@ def create_api(root, *, name, path, owner, team='integrations', tier='internal',
                     for label,auth,status in [('authenticated-read','valid',200),('missing-token-rejected','none',401),('invalid-token-rejected','invalid',401)]]}
     native_text=dump(native)
     native_text=native_text.replace('_info:\n','# Management boundary: never reuse another API\'s owner tag.\n_info:\n',1)
-    native_text=native_text.replace('services:\n','# Service = destination backend. Variables come from apis/<api>/overlays/.\nservices:\n',1)
+    native_text=native_text.replace('services:\n','# Service = destination backend. Variables come from the target environment folder under konnect/.\nservices:\n',1)
     native_text=native_text.replace('  routes:\n','  # Route = public request path and HTTP method. Update openapi.yaml too.\n  routes:\n',1)
     native_text=native_text.replace('  plugins:\n','  # Policies apply to every Route on this Service. Review docs/OPERATIONS.md.\n  plugins:\n',1)
     content={destinations[0]:'# Ownership and classification; no passwords or tokens.\n'+dump(metadata),
@@ -130,7 +132,7 @@ def main():
     except (ValueError,OSError,KeyError,yaml.YAMLError) as exc:parser.exit(1,f'API NOT CREATED: {exc}\n')
     print(f'\nCreated {len(created)} files for {args.name}. All five API environments remain disabled.')
     for p in created:print('  '+p.relative_to(ROOT).as_posix())
-    print(f'\nNEXT: edit apis/{args.name}/overlays/dev.yaml with approved DEV values.')
+    print(f'\nNEXT: edit {created[4].relative_to(ROOT)} with approved DEV values.')
     print(f'Then run: bash scripts/build.sh {args.name} dev build/{args.name}/dev')
     print('Read docs/ADD_AN_API.md for the review and deployment checklist. Do not rerun the starter to update an existing API.')
     if args.tier=='external':print('External API: replace the documentation-only IP allow list and review the OpenAPI contract before enablement.')

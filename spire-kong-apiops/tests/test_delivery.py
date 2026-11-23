@@ -56,7 +56,7 @@ class EnabledValidationTests(unittest.TestCase):
     def test_enabled_placeholder_cannot_pass_draft_build(self):
         with tempfile.TemporaryDirectory() as d:
             p=Path(d)/'repo';shutil.copytree(ROOT,p,ignore=shutil.ignore_patterns('.venv','build','evidence','__pycache__'))
-            for f in ['environments/nonprod/dev/target.yaml','apis/documents/overlays/dev.yaml']:
+            for f in ['konnect/nonprod/dev/internal.yaml','konnect/nonprod/dev/apis/content/documents.yaml']:
                 q=p/f;q.write_text(q.read_text().replace('enabled: false','enabled: true'))
             import subprocess
             r=subprocess.run(['bash','scripts/build.sh','documents','dev','build/state'],cwd=p,capture_output=True,text=True)

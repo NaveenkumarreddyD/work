@@ -31,7 +31,7 @@ node('kong-release') {
         stage('Validate reviewed source without deployment credentials') {
           sh 'bash scripts/security.sh && bash scripts/check.sh'
         }
-        apiNames=findFiles(glob:'apis/*/metadata.yaml').collect { it.path.tokenize('/')[1] }
+        apiNames=findFiles(glob:'apis/*/*/metadata.yaml').collect { it.path.tokenize('/')[2] }
         if (!apiNames) error('No APIs found')
         for (api in apiNames) {
           if (!(api ==~ /[a-z][a-z0-9-]{2,62}/)) error('Invalid API directory')

@@ -1,7 +1,0 @@
-# CI/CD connection inputs supplied/approved by Kong owners; this does not create a Control Plane.
-# Enabling this environment does not enable all APIs; each API has its own switch.
-enabled: false
-konnect_addr: https://REPLACE_KONNECT_REGION.example.invalid
-control_planes:
-  internal: REPLACE_DEV_INTERNAL_CP
-  external: REPLACE_DEV_EXTERNAL_CP

@@ -7,7 +7,7 @@ cd "$ROOT"
 "$PYTHON" -c 'import sys; assert sys.version_info >= (3,11), "Python 3.11+ required"'
 "$PYTHON" -m unittest discover -s tests -v
 "$PYTHON" scripts/validate.py source
-for api_dir in apis/*; do
+for api_dir in apis/*/*; do
   [[ -d "$api_dir" ]] || continue
   for environment in dev uat training preprod prod; do
     bash scripts/build.sh "${api_dir##*/}" "$environment" "build/check/${api_dir##*/}/$environment"
