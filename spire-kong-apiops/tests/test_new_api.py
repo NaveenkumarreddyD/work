@@ -46,7 +46,7 @@ class NewApiTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'must be listed'):
             settings(self.root,'customer-api','dev')
         inventory = self.root/'konnect/nonprod/dev/internal.yaml'
-        inventory.write_text(inventory.read_text().replace('[documents]','[documents, customer-api]'))
+        inventory.write_text(inventory.read_text().replace('[invoices]','[invoices, customer-api]'))
         settings(self.root,'customer-api','dev')
 
     def test_same_api_name_in_another_domain_is_rejected(self):

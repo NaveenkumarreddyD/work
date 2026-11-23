@@ -1,0 +1,40 @@
+openapi: 3.0.3
+info:
+  title: Invoices API (disabled example)
+  version: 1.0.0
+paths:
+  /billing/invoices/v1:
+    get:
+      summary: List invoices
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of invoices visible to the caller
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [invoices]
+                properties:
+                  invoices:
+                    type: array
+                    items:
+                      type: object
+                      required: [invoiceId]
+                      properties:
+                        invoiceId:
+                          type: string
+              example:
+                invoices:
+                  - invoiceId: INV-1001
+        '401':
+          description: Authentication rejected
+        '403':
+          description: Permission rejected
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

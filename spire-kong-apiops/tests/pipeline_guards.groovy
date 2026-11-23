@@ -6,7 +6,7 @@ def source=new File(args ? args[0] : 'pipelines/Deploy.Jenkinsfile').text
 def execute={ Map overrides, String target ->
   def loader=new GroovyClassLoader()
   def instance=loader.parseClass(source).newInstance()
-  instance.binding=new Binding([params:[ACTION:'DEPLOY',PACKAGE_BUILD:'12',API:'documents',REF:'kong-v1.0.0',PREVIOUS_BUILD:'1',CHANGE_TICKET:'CHG-123',ALLOW_DELETIONS:false]+overrides,env:[TARGET_ENV:target]])
+  instance.binding=new Binding([params:[ACTION:'DEPLOY',PACKAGE_BUILD:'12',API:'invoices',REF:'kong-v1.0.0',PREVIOUS_BUILD:'1',CHANGE_TICKET:'CHG-123',ALLOW_DELETIONS:false]+overrides,env:[TARGET_ENV:target]])
   instance.metaClass.methodMissing={ String name, Object values ->
     if (name=='error') throw new GuardRejected(values[0].toString())
     if (name=='node') throw new AgentReached()

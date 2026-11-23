@@ -13,7 +13,7 @@ The release manager sets the repository version by creating a signed Git tag. St
    ```bash
    git fetch origin main --tags
    git tag --list 'kong-v*' --sort=-version:refname
-   git tag -s kong-v1.4.3 DEV_COMMIT_SHA -m "Fix Documents API routing"
+   git tag -s kong-v1.4.3 DEV_COMMIT_SHA -m "Fix Invoices API routing"
    git verify-tag kong-v1.4.3
    git push origin refs/tags/kong-v1.4.3
    ```

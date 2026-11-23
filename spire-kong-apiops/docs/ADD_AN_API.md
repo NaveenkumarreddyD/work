@@ -1,6 +1,6 @@
 # Add an API or Route
 
-Start with the README commands. The single checked-in `documents` API is a disabled example, not a definition of a real Spire API. Copying templates is handled by the optional starter command; its templates live under `scripts/templates/`.
+Start with the README commands. The single checked-in `invoices` API is a disabled example, not a definition of a real Spire API. Copying templates is handled by the optional starter command; its templates live under `scripts/templates/`.
 
 ## New API
 

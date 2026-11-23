@@ -41,7 +41,7 @@ Edit `pipelines/settings.json` in the reviewed tooling revision:
 - `jobs`: exact job full names in your Jenkins. Included `Kong/...` names are a suggested local convention, not discovered jobs.
 - `targets`: actual regional Konnect API URL, CP names per tier, credential ID and approver groups. Approval groups are required for nonautomatic mutations; PREPROD/PROD use two distinct approved identities. Jenkins administrators can bypass input submitter restrictions: control/admin-audit that capability.
 - `targets.<environment>.smoke_gateways` maps each API name to its approved HTTPS gateway URL. Enter the exact gateway_url from its approved overlay in the pinned tooling settings. Jenkins checks the destination before binding the API smoke token.
-- `drift_targets`: explicit list such as `[{"environment":"dev","api":"documents"}]`, only after that API has a successful deployment. This list is illustrative. Monitor every live managed scope, even disabled APIs pending retirement.
+- `drift_targets`: explicit list such as `[{"environment":"dev","api":"invoices"}]`, only after that API has a successful deployment. This list is illustrative. Monitor every live managed scope, even disabled APIs pending retirement.
 
 Populate source `konnect/.../<tier>.yaml` and per-API overlays with matching owner-approved values. Trusted settings are an independent target allowlist. A released package cannot redirect the deployment token to another CP. Renaming/moving a CP or ownership tag is a maintenance migration, not ordinary promotion.
 

@@ -4,9 +4,9 @@ _format_version: '3.0'
 # Keep this owner scope stable across releases; it is not a version tag.
 _info:
   select_tags:
-  - owner-documents
+  - owner-invoices
 services:
-- name: documents-service
+- name: invoices-service
   protocol: https
   tls_verify: true
   # Environment references are filled from the target environment folder under konnect/.
@@ -18,15 +18,15 @@ services:
   write_timeout: 30000
   retries: 0
   tags:
-  - owner-documents
+  - owner-invoices
   - team-integrations
-  - domain-content
+  - domain-billing
   - data-internal
   # Public endpoints. Update openapi.yaml and tests.yaml when these change.
   routes:
-  - name: documents-v1
+  - name: invoices-v1
     paths:
-    - /content/documents/v1
+    - /billing/invoices/v1
     methods:
     - GET
     protocols:
@@ -34,12 +34,12 @@ services:
     strip_path: false
     preserve_host: false
     tags:
-    - owner-documents
+    - owner-invoices
   # Service policies cover every Route below this Service.
   plugins:
   - name: openid-connect
     tags:
-    - owner-documents
+    - owner-invoices
     config:
       issuer: ${{ env "DECK_OIDC_ISSUER" }}
       auth_methods:
@@ -58,7 +58,7 @@ services:
       - ${{ env "DECK_REQUIRED_ROLE" }}
   - name: rate-limiting
     tags:
-    - owner-documents
+    - owner-invoices
     config:
       minute: ${{ env "DECK_RATE_MINUTE" }}
       policy: ${{ env "DECK_RATE_POLICY" }}
@@ -73,13 +73,13 @@ services:
         password: '${{ env "DECK_REDIS_PASSWORD_REF" }}'
   - name: request-size-limiting
     tags:
-    - owner-documents
+    - owner-invoices
     config:
       allowed_payload_size: 1
       size_unit: megabytes
   - name: correlation-id
     tags:
-    - owner-documents
+    - owner-invoices
     config:
       header_name: X-Correlation-ID
       generator: uuid

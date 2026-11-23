@@ -20,7 +20,7 @@ This repository delivers API changes to existing Kong Konnect control planes. De
 | Backend or other settings for one environment | `konnect/nonprod/dev/apis/<domain>/<api>.yaml` for DEV |
 | Owner, team or gateway tier | `metadata.yaml` |
 
-**Why is there an `apis/content/documents/` folder?** “Documents” is the name of the disabled sample API. Its files show how one API fits together, and the repository tests exercise that example. Each folder directly under `apis/` represents one business domain. The starter takes the domain from the first segment of the public path. For example, a new API named `customers` with path `/crm/customers/v1` goes in `apis/crm/customers/`. The developer and operator guides live in `docs/`. [Explore the sample API](apis/content/documents)
+**Example: Billing → Invoices.** Billing is the business domain. Invoices is one API owned within that domain. A client calls `GET /billing/invoices/v1` to list invoices. To change the route, edit `apis/billing/invoices/kong.yaml`. To change only its DEV backend, edit `konnect/nonprod/dev/apis/billing/invoices.yaml`. The sample is disabled in every environment. [Explore the Invoices API](apis/billing/invoices)
 
 ## Add an API
 
@@ -43,7 +43,7 @@ Edit the existing API folder. For a new path, add the Route to `kong.yaml`, desc
 
 ## Promote a release
 
-Before tagging, review the API’s settings in each intended destination. For Documents, open the folder below and edit `apis/content/documents.yaml` inside it. The same folder holds the internal and external control-plane registrations.
+Before tagging, review the API’s settings in each intended destination. For Invoices, open the folder below and edit `apis/billing/invoices.yaml` inside it. The same folder holds the internal and external control-plane registrations.
 
 | Destination folder | Jenkins deploys after |
 |---|---|

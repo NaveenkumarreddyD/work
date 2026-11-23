@@ -4,7 +4,7 @@ properties([parameters([
   choice(name:'ACTION',choices:['DEPLOY','ROLLBACK']),
   string(name:'PACKAGE_BUILD',defaultValue:'',description:'Retained Kong/Build number'),
   string(name:'REF',defaultValue:'',description:'Protected kong-vX.Y.Z tag; DEV also accepts dev-<40-char-commit>'),
-  string(name:'API',defaultValue:'documents'),
+  string(name:'API',defaultValue:'invoices'),
   string(name:'PREVIOUS_BUILD',defaultValue:'',description:'Predecessor receipt build for promotion; same-environment known-good build for rollback/drift'),
   string(name:'CHANGE_TICKET',defaultValue:''),
   booleanParam(name:'ALLOW_DELETIONS',defaultValue:false)

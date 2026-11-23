@@ -2,19 +2,19 @@
 tests:
   - name: authenticated-read
     method: GET
-    path: /content/documents/v1
+    path: /billing/invoices/v1
     auth: valid
     expected_status: 200
-    body_contains: documents
+    body_contains: invoices
   - name: missing-token-rejected
     method: GET
-    path: /content/documents/v1
+    path: /billing/invoices/v1
     auth: none
     expected_status: 401
     body_contains: ''
   - name: invalid-token-rejected
     method: GET
-    path: /content/documents/v1
+    path: /billing/invoices/v1
     auth: invalid
     expected_status: 401
     body_contains: ''
