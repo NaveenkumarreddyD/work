@@ -44,10 +44,9 @@ def create_api(root, *, name, path, owner, team='integrations', tier='internal',
     # A newcomer should discover a duplicate public path before generating nine files.
     for existing in (root/'apis').glob('*/*/metadata.yaml'):
         if existing.parent.name == name: raise ValueError(f'API already exists: {name}')
-        if load(existing)['tier']!=tier: continue
         for service in load(existing.with_name('kong.yaml')).get('services',[]):
             if any(path in route.get('paths',[]) for route in service.get('routes',[])):
-                raise ValueError(f'path already used by {existing.parent.name} on the {tier} tier')
+                raise ValueError(f'path already used by {existing.parent.name}')
     classification='internal' if tier=='internal' else 'confidential'
     tag=f'owner-{name}'
     metadata=dict(name=name,owner=owner,team=team,domain=domain,data_class=classification,tier=tier)
@@ -125,7 +124,7 @@ def main():
         args.path=args.path or input('Public path, for example /crm/customers/v1: ').strip()
         args.owner=args.owner or input('Owning team email: ').strip()
         args.team=input(f'Team name [{args.team}]: ').strip() or args.team
-        args.tier=input(f'Gateway tier internal/external [{args.tier}]: ').strip() or args.tier
+        args.tier=input(f'API policy profile internal/external [{args.tier}]: ').strip() or args.tier
         args.body_contains=input('Text expected in a successful response (optional): ')
     try:
         created=create_api(ROOT,**vars(args))

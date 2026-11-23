@@ -30,7 +30,7 @@ for (item in targets) {
         def manifest=readJSON(file:"${packageDir}/manifest.json")
         if (!(manifest.tier in ['internal','external'])) error('Invalid tier')
         def target=cfg.targets[targetEnv]
-        def cp=target.control_planes[manifest.tier]
+        def cp=target.control_plane
         if (!cp || !target.konnect_addr || !target.token_credential || !cfg.release_registry) error('Configure trusted drift target')
         withEnv(["PACKAGE_DIR=${packageDir}","API=${api}","TARGET_ENV=${targetEnv}","EVIDENCE_DIR=${evidenceDir}","EXPECTED_CP=${cp}","EXPECTED_ADDR=${target.konnect_addr}","RELEASE_REGISTRY=${cfg.release_registry}"]) {
           sh 'python3 scripts/release.py receipt-check "$PACKAGE_DIR" "$TARGET_ENV" last/evidence/public/deployment/receipt.json ROLLBACK'

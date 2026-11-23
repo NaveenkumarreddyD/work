@@ -6,10 +6,10 @@ Start with the README commands. Invoices, Payments and Refunds are disabled exam
 
 Each business domain has one folder under `apis/`. Each API has its own folder within that domain. API names must be unique across domains because Jenkins and decK use them for releases and ownership tags.
 
-1. Run `scripts/new_api.py` with a unique API name, public path and real owning-team email. Choose `--tier external` only if platform confirms the target and policy model.
+1. Run `scripts/new_api.py` with a unique API name, public path and real owning-team email. Choose `--tier external` only if platform approves the external API policy profile.
 2. Review `metadata.yaml`, the Service and nested Routes/plugins in `kong.yaml`, the contract in `openapi.yaml` and checks in `tests.yaml`.
 3. Start with `environments/nonprod/dev/apis/<domain>/<api>.yaml`. Ask platform/IAM for actual backend hostname, front-door URL, issuer/audience/role, Vault reference, Redis settings and quota. No credentials belong in these files. The sample numbers are proposed examples, not approved capacity values.
-4. Platform supplies the existing DEV target and separately configures the trusted job target. Register the API under `apis` in `environments/nonprod/dev/<tier>.yaml`. Repeat registration for each higher environment before enabling its overlay. Both the target and API overlay must be enabled. Leave higher-environment overlays disabled until their values are reviewed.
+4. Platform supplies the existing DEV target and separately configures the trusted job target. Register the API under `apis` in `environments/nonprod/dev/target.yaml`. Repeat registration for each higher environment before enabling its overlay. Both the target and API overlay must be enabled. Leave higher-environment overlays disabled until their values are reviewed.
 5. Run all checks and the secret scan. Submit an MR. Enablement with unresolved placeholders must fail.
 6. Merge after API owner and required APIOps/security review. The protected-main Build job validates and packages all APIs, then requests DEV deployment for each. The Build job skips disabled APIs when scheduling automatic DEV deployments. All enabled APIs are reconciled, so drift on an otherwise unchanged API also appears in the DEV plan.
 7. Inspect the DEV receipt and smoke results. A failed sync or smoke test does not create a success receipt. Recover before promotion.

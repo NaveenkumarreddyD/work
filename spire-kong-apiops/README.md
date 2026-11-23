@@ -42,7 +42,7 @@ python3 -m pip install --require-hashes -r requirements.lock
 
 1. Create a branch and run `python3 scripts/new_api.py` in your terminal. Answer the questions about the API name, public path and team. The starter creates the files with deployment disabled.
 2. Open the new API folder. Review the generated Route, contract and smoke checks. Fill in the DEV overlay with the values supplied by your backend and IAM teams. Store only secret references in Git.
-3. Ask the APIOps maintainer to list the API in the matching DEV control-plane file and confirm the target, register the approved smoke-test gateway URL and configure the API's Jenkins smoke credential. Enable the DEV overlay when ready.
+3. Ask the APIOps maintainer to list the API in the DEV target file (`environments/nonprod/dev/target.yaml`) and confirm the target, register the approved smoke-test gateway URL and configure the API's Jenkins smoke credential. Enable the DEV overlay when ready.
 4. Open a GitLab merge request. Jenkins checks all environments. After merge, look for the successful DEV deployment and its receipt.
 
 ## Update a Route
@@ -82,6 +82,6 @@ Use Python 3.11+, decK 1.70.0 and Gitleaks 8.30.1. Run `bash scripts/check.sh` a
 
 ## How the folders map to Kong’s proposal
 
-`environments/nonprod/` contains dev, uat and training. `environments/prod/` contains preprod and prod. Each environment contains `internal.yaml` and `external.yaml`. The API’s tier in `metadata.yaml` selects the file. A maintainer lists the API under `apis` before its environment overlay can be enabled. Registration alone does not deploy it.
+`environments/nonprod/` contains dev, uat and training. `environments/prod/` contains preprod and prod. Each environment has one `target.yaml`. It identifies the existing Konnect control plane and lists the APIs registered for that environment. The `tier` in API metadata selects API-specific policy checks. Both profiles use the same environment target. A maintainer lists the API under `apis` before its environment overlay can be enabled. Registration alone does not deploy it.
 
 As in [KongAir](https://github.com/Kong/KongAir/tree/main), each team keeps its API contract next to the configuration it owns. This repository uses GitLab for review, Jenkins for delivery and decK for Gateway Services, Routes and plugins. The separate platform repository owns control-plane provisioning and shared policies.

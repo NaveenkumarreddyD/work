@@ -68,14 +68,11 @@ def environment_dir(root, env):
     if env not in ENVS: raise ValueError('invalid environment')
     return root/'environments'/('prod' if env in ('preprod','prod') else 'nonprod')/env
 
-def target_path(root, env, tier):
-    return environment_dir(root,env)/f'{tier}.yaml'
-
 def values_path(root, env, domain, api):
     return environment_dir(root,env)/'apis'/domain/f'{api}.yaml'
 
-def read_target(root, env, tier):
-    target = load(target_path(root,env,tier))
+def read_target(root, env):
+    target = load(environment_dir(root,env)/'target.yaml')
     check_keys(target,TARGET_KEYS,'target')
     if type(target['enabled']) is not bool: raise ValueError('target enabled must be boolean')
     https(target['konnect_addr'],'konnect_addr')
@@ -105,7 +102,7 @@ def settings(root, api, env, strict=False):
     check_keys(meta, {'name','owner','team','domain','data_class','tier'}, 'metadata')
     if meta['name'] != api or meta['tier'] not in ('internal','external'): raise ValueError('metadata name/tier mismatch')
     if any(not isinstance(v,str) or not v.strip() for v in meta.values()): raise ValueError('metadata values must be nonempty strings')
-    target = read_target(root,env,meta["tier"])
+    target = read_target(root,env)
     if meta['domain'] != folder.parent.name: raise ValueError('metadata domain must match business domain folder')
     values = load(values_path(root,env,folder.parent.name,api))
     check_keys(values,VALUE_KEYS,'environment API')
@@ -298,11 +295,9 @@ def main():
             print(f'Policy and contract checks passed: {a.api}/{a.env}')
         else:
             for env in ENVS:
-                for tier in ('internal','external'):
-                    inventory = read_target(a.root,env,tier)
-                    for api in inventory['apis']:
-                        metadata = load(api_directory(a.root,api)/'metadata.yaml')
-                        if metadata['tier'] != tier: raise ValueError(f'{api}: wrong tier in {env} inventory')
+                inventory = read_target(a.root,env)
+                for api in inventory['apis']:
+                    api_directory(a.root,api)
             seen_names=set(); seen_paths=set()
             for folder in sorted((a.root/'apis').glob('*/*')):
                 if not folder.is_dir(): continue
@@ -316,9 +311,8 @@ def main():
                         if r['name'] in seen_names: raise ValueError('duplicate entity name across APIs')
                         seen_names.add(r['name'])
                         for path in r['paths']:
-                            tier=load(folder/'metadata.yaml')['tier']; key=(tier,path)
-                            if key in seen_paths: raise ValueError('duplicate Route path across APIs on same tier')
-                            seen_paths.add(key)
+                            if path in seen_paths: raise ValueError('duplicate Route path across APIs')
+                            seen_paths.add(path)
             print('Source metadata and environment checks passed')
     except (ValueError,KeyError,TypeError,OSError) as exc:
         sys.exit(f'VALIDATION FAILED: {exc}')

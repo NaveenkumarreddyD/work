@@ -45,7 +45,7 @@ class NewApiTests(unittest.TestCase):
         overlay.write_text(overlay.read_text().replace('enabled: false','enabled: true'))
         with self.assertRaisesRegex(ValueError,'must be listed'):
             settings(self.root,'customer-api','dev')
-        inventory = self.root/'environments/nonprod/dev/internal.yaml'
+        inventory = self.root/'environments/nonprod/dev/target.yaml'
         target = yaml.safe_load(inventory.read_text())
         target['apis'].append('customer-api')
         inventory.write_text(yaml.safe_dump(target))
@@ -56,6 +56,18 @@ class NewApiTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'already exists'):
             self.create(path='/billing/customer-api/v1')
         self.assertFalse((self.root/'apis/billing/customer-api').exists())
+
+    def test_both_policy_profiles_use_one_target(self):
+        from validate import settings
+        self.create(name='partner-api',tier='external')
+        internal = settings(self.root,'invoices','dev')[1]
+        external = settings(self.root,'partner-api','dev')[1]
+        self.assertEqual(internal,external)
+
+    def test_duplicate_path_across_profiles_is_rejected(self):
+        self.create()
+        with self.assertRaisesRegex(ValueError,'path already used'):
+            self.create(name='partner-api',tier='external')
 
     def test_existing_api_is_never_overwritten(self):
         self.create();p=self.root/'apis/crm/customer-api/kong.yaml';p.write_text('keep my changes')
@@ -76,8 +88,8 @@ class NewApiTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'exists|symlink'):self.create()
         self.assertEqual(list(external.iterdir()),[])
     def test_target_enablement_not_changed(self):
-        before=(self.root/'environments/nonprod/dev/internal.yaml').read_bytes();self.create()
-        self.assertEqual((self.root/'environments/nonprod/dev/internal.yaml').read_bytes(),before)
+        before=(self.root/'environments/nonprod/dev/target.yaml').read_bytes();self.create()
+        self.assertEqual((self.root/'environments/nonprod/dev/target.yaml').read_bytes(),before)
     def test_external_spec_and_test_paths_agree(self):
         self.create(name='partner-api',tier='external')
         spec=yaml.safe_load((self.root/'apis/crm/partner-api/openapi.yaml').read_text())

@@ -1,5 +1,5 @@
 # Existing Konnect control plane. Set approved values before enabling.
 enabled: false
 konnect_addr: https://REPLACE_KONNECT_REGION.example.invalid
-control_plane: REPLACE_PREPROD_EXTERNAL_CP
-apis: []
+control_plane: REPLACE_UAT_CP
+apis: [invoices, payments, refunds]

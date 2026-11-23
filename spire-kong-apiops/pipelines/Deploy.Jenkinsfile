@@ -32,7 +32,7 @@ node(targetEnv in ['preprod','prod'] ? 'kong-prod' : 'kong-nonprod') {
       }
       def manifest=readJSON(file:"${packageDir}/manifest.json")
       if (!(manifest.tier in ['internal','external'])) error('Invalid API tier')
-      def cp=target.control_planes[manifest.tier]
+      def cp=target.control_plane
       if (!target.konnect_addr || !cp || !target.token_credential) error('Configure independent trusted target and credentials first')
       // Disabled sample packages are skipped only by automatic DEV; never silently retire live APIs.
       if (automatic && !manifest.environments.dev.enabled) {
