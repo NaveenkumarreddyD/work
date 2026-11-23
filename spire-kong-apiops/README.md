@@ -58,9 +58,57 @@ Each environment has one `target.yaml` shared by its APIs. For example, the [UAT
 
 **Promoting an already configured API requires no file changes.** Start the destination job in Jenkins with the tested tag and package build, then review the proposed changes. See [Promote a release](#promote-a-release).
 
-## Update a Route
+## Payments walkthrough
 
-Edit the existing API folder. For a new path, add the Route to `kong.yaml`, describe the same path and method in `openapi.yaml`, and update `tests.yaml`. Preserve the API's ownership tag. Submit the three files together for review. [Developer walkthrough](docs/ADD_AN_API.md)
+Add `GET /billing/payments/v1/summary`, test it through the DEV gateway, then promote Payments to UAT, PREPROD and PROD. This example assumes the backend already serves that path and returns a JSON field named `totalPayments`. The checked-in Payments sample is disabled. Before the first live run, an APIOps maintainer must configure and enable DEV with approved connection details and Jenkins credentials. [Environment setup](docs/SETUP.md)
+
+### 1. Add the route on a feature branch
+
+Create `feature/payments-summary` from the latest `main`. Make these three edits in one merge request:
+
+| File | Edit |
+|---|---|
+| [kong.yaml](apis/billing/payments/kong.yaml) | Under `payments-service.routes`, copy the existing `payments-v1` route. Name the copy `payments-summary-v1` and set its path to `/billing/payments/v1/summary`. Keep the GET method, HTTPS, `strip_path: false` and the `owner-payments` tag. |
+| [openapi.yaml](apis/billing/payments/openapi.yaml) | Add a GET operation for the same path. Describe the successful response with `totalPayments`, retain bearer authentication, and document 401 and 403. For this compatible addition, update the sample contract version from `1.0.0` to `1.1.0`. |
+| [tests.yaml](apis/billing/payments/tests.yaml) | Keep the existing tests and copy the three checks for the new path. Give each copy a unique name. With valid credentials expect 200 and set `body_contains: totalPayments`. With missing or invalid credentials expect 401. |
+
+### 2. Validate the change and test in DEV
+
+From the directory containing this README, run the local checks with the project tools installed:
+
+```bash
+bash scripts/check.sh
+bash scripts/security.sh
+```
+
+Push the feature branch and open a GitLab merge request into `main`. After validation, review and merge, Jenkins automatically deploys enabled APIs to DEV. Open the successful **Payments** run of **Deploy-dev**. Check that the new endpoint passed all three smoke checks and that the run archived `receipt.json`. Record the DEV deployment build number and the full commit SHA from that run.
+
+### 3. Tag the tested commit and build the release
+
+The release manager checks that Payments is configured and enabled in each intended destination **before tagging**. If settings need a change, merge it and use the commit from the next successful DEV run. In the commands below, replace `DEV_COMMIT_SHA` with that SHA and `kong-v1.5.0` with the next unused release tag. Use your approved signing key.
+
+```bash
+git fetch origin main --tags
+git tag -s kong-v1.5.0 DEV_COMMIT_SHA -m "Add Payments summary route"
+git verify-tag kong-v1.5.0
+git push origin refs/tags/kong-v1.5.0
+```
+
+In Jenkins, open **Kong/Build → Build with Parameters**, enter the signed tag in `RELEASE_TAG`, and start the build. Record the successful build number as `PACKAGE_BUILD`. This package contains the reviewed settings for every destination.
+
+### 4. Manually promote Payments in Jenkins
+
+When the team is ready for a destination, open its job and select **Build with Parameters**. Choose `ACTION=DEPLOY`, change the default `API` from `invoices` to **`payments`**, enter the signed tag in `REF`, and supply your `CHANGE_TICKET`. Leave `ALLOW_DELETIONS` unchecked for this route addition.
+
+Reuse the same `REF` and `PACKAGE_BUILD` in all three jobs. For `PREVIOUS_BUILD`, enter the successful Payments **deployment** build from the preceding environment:
+
+| Start this job manually | Use this run for `PREVIOUS_BUILD` | Approval after Jenkins shows the proposed changes |
+|---|---|---|
+| `Deploy-uat` | `Deploy-dev` from step 2 | One authorized approver |
+| `Deploy-preprod` | Successful `Deploy-uat` | Two distinct authorized approvers |
+| `Deploy-prod` | Successful `Deploy-preprod` | Two distinct authorized approvers |
+
+At each stage, review the plan for `payments-summary-v1`. After approval, Jenkins applies the change, checks the resulting configuration and runs the smoke tests. A successful run produces the receipt needed for the next stage. Each higher environment waits for a separate manual start. **Promotion requires zero file edits.**
 
 ## Promote a release
 
