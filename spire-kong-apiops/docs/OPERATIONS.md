@@ -1,14 +1,27 @@
 # Release, rollback and drift
 
+## Choose the release version
+
+The release manager sets the repository version by creating a signed Git tag. Starting from `kong-v1.4.2`, choose `kong-v1.4.3` for a compatible fix, `kong-v1.5.0` for a compatible new endpoint, or `kong-v2.0.0` for a breaking change. Each API has its own contract version in `openapi.yaml` under `info.version`. Update that field in the merge request when the published contract changes.
+
 ## Normal release
 
 1. Merge the reviewed change to main and wait for DEV success. Save the successful Deploy-dev build number for each API you will promote.
 2. Finish reviewing values for all intended environments before tagging. A disabled variant cannot be enabled inside an already built release.
-3. Create a signed annotated release tag on the reviewed main commit, using your approved signing identity. Example syntax: `git tag -s kong-v1.2.3 <reviewed-commit> -m "Reviewed API release"`. The version/commit here are illustrative. Publish tags only through your authorized release process; no remote push is part of this deliverable.
+3. Copy the full commit SHA from the successful DEV run. In your GitLab clone, use your approved signing key and replace `DEV_COMMIT_SHA` and the example tag below with the tested commit and the next unused version.
+
+   ```bash
+   git fetch origin main --tags
+   git tag --list 'kong-v*' --sort=-version:refname
+   git tag -s kong-v1.4.3 DEV_COMMIT_SHA -m "Fix Documents API routing"
+   git verify-tag kong-v1.4.3
+   git push origin refs/tags/kong-v1.4.3
+   ```
+
 4. Run Kong/Build with RELEASE_TAG. Keep this successful package build and its artifacts. The manifest records commit, annotated tag-object ID, decK version, targets and every environment-state checksum. The same immutable package is reused; no rendering happens during promotion.
-5. Run Deploy-uat with API, REF, PACKAGE_BUILD, PREVIOUS_BUILD=the successful DEV receipt build, and CHANGE_TICKET. It verifies the same API/commit, fetches the current protected tag, validates the package/target and runs online plugin-schema validation/diff.
+5. Manually start Deploy-uat with API, REF, PACKAGE_BUILD, PREVIOUS_BUILD=the successful DEV receipt build, and CHANGE_TICKET. It verifies the same API/commit, fetches the current protected tag, validates the package/target and runs online plugin-schema validation/diff.
 6. Review the redacted plan artifact. Approve using an authorized identity. Recomputed raw plan must match the approved plan before synchronization. Any change fails and needs a new plan/approval.
-7. PREPROD requires the successful UAT receipt and two distinct authorized approvers. PROD requires PREPROD and two distinct approvers. TRAINING requires DEV and one approval. Configure groups/permissions to satisfy your organization's separation-of-duty policy; group membership and Jenkins admin powers are external trust controls.
+7. A release manager manually starts each higher-environment job when ready. Publishing a tag or successfully completing a preceding environment only makes the release eligible for promotion. PREPROD requires the successful UAT receipt and two distinct authorized approvers. PROD requires PREPROD and two distinct approvers. TRAINING requires DEV and one approval. Configure groups/permissions to satisfy your organization's separation-of-duty policy; group membership and Jenkins admin powers are external trust controls.
 8. Success means sync completed, a post-sync diff is empty and positive/negative gateway smoke checks passed. Only then is receipt.json emitted. Archive that receipt and pin the related Build and Deploy builds in storage.
 
 DEV and tag-package manifests differ in reference identity, so DEV→UAT compares API+commit. UAT→PREPROD→PROD also checks the exact manifest digest. Per-environment rendered files naturally differ because backends and IAM values differ, but their bytes are all frozen in the same retained release package.
